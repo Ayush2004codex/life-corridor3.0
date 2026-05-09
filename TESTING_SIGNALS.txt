@@ -1,0 +1,290 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║            LIFE CORRIDOR v2.0 - QUICK TESTING GUIDE                      ║
+║     Testing Access Control & Signal Visibility Enhancements              ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🎯 TEST 1: DRIVER ACCESSING ADMIN DASHBOARD
+═════════════════════════════════════════════════════════════════════════════
+
+SETUP:
+  1. Open index.html
+  2. Click "Get Started"
+  3. Sign in as: driver@lifecorridor.io (password: any)
+  4. Should see driver dashboard
+
+TEST STEPS:
+  1. Notice URL is: .../driver.html
+  2. In address bar, change to: .../admin.html
+  3. Press Enter
+
+EXPECTED RESULT:
+  ✓ See overlay with lock icon (🔐)
+  ✓ Title: "ACCESS DENIED"
+  ✓ Message: "You are currently logged in as a Driver..."
+  ✓ Two buttons visible:
+    - "🔑 Admin Login"
+    - "← Go to Driver Dashboard"
+  ✓ Admin dashboard content is NOT visible (hidden)
+  ✓ Navigation bar is NOT visible (hidden)
+
+WHAT NOT TO SEE:
+  ✗ Hospital management overview
+  ✗ Incoming ambulances list
+  ✗ Signal controls
+  ✗ Any admin-specific content
+
+CLICK TEST - ADMIN LOGIN:
+  1. Click "🔑 Admin Login" button
+  2. Should be logged out
+  3. Should redirect to login.html
+  4. Try to sign in with admin account
+
+CLICK TEST - DRIVER DASHBOARD:
+  1. Go back to admin.html (should still show access denied)
+  2. Click "← Go to Driver Dashboard" button
+  3. Should redirect to driver.html
+  4. Should see driver dashboard again
+
+═════════════════════════════════════════════════════════════════════════════
+
+🎯 TEST 2: SIGNAL CONTROL VIEW (DRIVER DASHBOARD)
+═════════════════════════════════════════════════════════════════════════════
+
+SETUP:
+  1. Login as driver: driver@lifecorridor.io
+  2. Should see driver dashboard
+
+FIND THE SIGNAL CONTROL SECTION:
+  Looking for section with:
+    - Title: "🚦 Signal Control - Green Corridor Status"
+    - Green border/highlight
+    - Below "Live Navigation Status"
+    - Above "Live Ambulance Tracking"
+
+SECTION CONTENTS (BEFORE ACTIVATION):
+  ┌─────────────────────────────────────────┐
+  │   Signals Cleared    Corridor Status     │
+  │      0/6                INACTIVE         │
+  │   Signal State                           │
+  │      🔴                                  │
+  └─────────────────────────────────────────┘
+
+  Plus 6 signal indicators showing RED (🔴)
+
+VISUAL CHECK (INACTIVE STATE):
+  ✓ See "0/6" in Signals Cleared
+  ✓ See "INACTIVE" in Corridor Status
+  ✓ See 🔴 (red) in Signal State
+  ✓ All 6 signals shown in RED
+  ✓ Each signal labeled: Signal 1, Signal 2, etc.
+  ✓ Each signal shows: RED (red text)
+
+═════════════════════════════════════════════════════════════════════════════
+
+🎯 TEST 3: ACTIVATE GREEN CORRIDOR (SIGNAL UPDATE)
+═════════════════════════════════════════════════════════════════════════════
+
+SETUP:
+  1. Login as driver
+  2. Find the "Request Emergency Corridor" section (above signal control)
+
+STEPS TO ACTIVATE:
+  1. In "Request Emergency Corridor" form, select:
+     - Destination Hospital: Any hospital
+     - Emergency Type: Any type
+  2. Click "Activate Green Corridor" button
+
+IMMEDIATE CHANGES (CHECK SIGNAL CONTROL SECTION):
+
+  Before:
+    Signals Cleared: 0/6
+    Corridor Status: INACTIVE
+    Signal State: 🔴
+
+  After:
+    Signals Cleared: 6/6 ✓
+    Corridor Status: ACTIVE ✓
+    Signal State: 🟢 ✓
+
+ALL SIGNALS TURN GREEN:
+  ✓ All 6 signals change from 🔴 RED to 🟢 GREEN
+  ✓ Each signal text changes from "RED" to "GREEN"
+  ✓ Green color (#00c853) visible
+  ✓ Glow effect around signals
+  ✓ Visual confirmation is clear
+
+OTHER UPDATES:
+  ✓ "Success!" status box appears above
+  ✓ Map signals also turn green
+  ✓ Ambulance starts moving on map
+  ✓ Live Navigation stats update (ETA: 6m, Speed: 65 km/h)
+  ✓ Map overlay shows "🟢 Active"
+
+═════════════════════════════════════════════════════════════════════════════
+
+🎯 TEST 4: ADMIN DASHBOARD (UNCHANGED)
+═════════════════════════════════════════════════════════════════════════════
+
+SETUP:
+  1. Login as admin: admin@lifecorridor.io
+  2. Should see admin dashboard
+
+EXPECTED RESULT:
+  ✓ See "Hospital Management Overview"
+  ✓ See 4 analytics cards
+  ✓ See "Active Incoming Requests" section
+  ✓ See "Signal Control Overview" section
+  ✓ All features working normally
+  ✓ No access denied message
+
+TEST SIGNAL CONTROL:
+  1. In right column, see "Signal Control Overview"
+  2. See 4 signal indicators
+  3. Click "⚡ Override All Green" button
+  4. Signals should respond
+
+NO CHANGE FOR ADMINS:
+  ✗ No new access denied message
+  ✗ No new signal view
+  ✗ Dashboard works exactly as before
+
+═════════════════════════════════════════════════════════════════════════════
+
+✅ FEATURE VERIFICATION CHECKLIST
+═════════════════════════════════════════════════════════════════════════════
+
+Access Control:
+  [ ] Driver sees "Access Denied" when accessing admin.html
+  [ ] Admin dashboard content hidden for drivers
+  [ ] Admin login button works
+  [ ] Driver dashboard button works
+  [ ] Admin can still access admin.html normally
+  [ ] Driver can still access driver.html normally
+
+Signal Control View:
+  [ ] Section visible on driver dashboard
+  [ ] Title shows "🚦 Signal Control - Green Corridor Status"
+  [ ] Three status cards visible (Signals Cleared, Corridor Status, Signal State)
+  [ ] Six signal indicators visible
+  [ ] All signals show RED by default
+
+Signal Activation:
+  [ ] Clicking "Activate Green Corridor" updates signal control
+  [ ] "Signals Cleared" changes to 6/6
+  [ ] "Corridor Status" changes to ACTIVE
+  [ ] "Signal State" changes to 🟢
+  [ ] All 6 signals change to GREEN color
+  [ ] Signal text updates from "RED" to "GREEN"
+  [ ] Glow effects visible on signals
+
+═════════════════════════════════════════════════════════════════════════════
+
+📱 MOBILE TESTING
+═════════════════════════════════════════════════════════════════════════════
+
+To test on mobile (DevTools):
+  1. Open Chrome/Firefox
+  2. Press F12 (DevTools)
+  3. Click phone icon (Device Toolbar)
+  4. Select mobile device (iPhone 12, Pixel, etc.)
+  5. Refresh page
+  6. Test all features above
+
+EXPECTED ON MOBILE:
+  ✓ Access Denied overlay centered
+  ✓ Text readable
+  ✓ Buttons tap-able
+  ✓ Signal view responsive
+  ✓ Signals stack properly
+  ✓ No horizontal scroll
+  ✓ All content visible
+
+═════════════════════════════════════════════════════════════════════════════
+
+🎨 VISUAL STYLING CHECKS
+═════════════════════════════════════════════════════════════════════════════
+
+Access Denied Card:
+  ✓ Red/orange gradient background
+  ✓ Lock icon (🔐) visible
+  ✓ Text centered
+  ✓ Red border
+  ✓ Glassmorphic effect (blurred background)
+  ✓ Shadow effect
+  ✓ Buttons styled properly
+
+Signal Control Section:
+  ✓ Green border/highlight
+  ✓ Gradient background
+  ✓ Status cards arranged in grid
+  ✓ Signal indicators in grid (6 columns)
+  ✓ Each signal has color dot
+  ✓ Labels clear
+  ✓ Helper text visible at bottom
+
+═════════════════════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING
+═════════════════════════════════════════════════════════════════════════════
+
+Problem: Don't see access denied
+  → Make sure you're logged in as driver
+  → Try admin.html, not admin
+  → Clear cache (Ctrl+Shift+Del)
+  → Check browser console (F12) for errors
+
+Problem: Signal control not visible
+  → Scroll down on driver dashboard
+  → Should be between navigation and map
+  → Make sure you're on driver.html
+  → Clear browser cache
+
+Problem: Signals don't turn green
+  → Click "Activate Green Corridor" in form above
+  → Check if button was actually clicked
+  → Look at signal indicators (6 dots)
+  → Check console for JavaScript errors
+
+Problem: Admin dashboard still visible
+  → Make sure you logged in as driver (not admin)
+  → Check localStorage (F12 → Application)
+  → Verify role is "driver" in session
+  → Try logout and login again
+
+═════════════════════════════════════════════════════════════════════════════
+
+✨ FULL WORKFLOW TEST
+═════════════════════════════════════════════════════════════════════════════
+
+Complete Test Scenario:
+  1. ✓ Open index.html
+  2. ✓ Click "Get Started"
+  3. ✓ Sign up or sign in as driver
+  4. ✓ Verify driver dashboard loads
+  5. ✓ Locate Signal Control section
+  6. ✓ See all 6 signals as RED
+  7. ✓ Fill corridor form
+  8. ✓ Click "Activate Green Corridor"
+  9. ✓ Watch signals turn GREEN
+  10. ✓ Verify stats update (6/6, ACTIVE, 🟢)
+  11. ✓ Watch ambulance animate on map
+  12. ✓ Try to access admin.html
+  13. ✓ See "Access Denied" message
+  14. ✓ Click "Admin Login"
+  15. ✓ Get logged out
+  16. ✓ Sign in as admin
+  17. ✓ Verify admin dashboard loads
+  18. ✓ Verify no access denied message
+  19. ✓ Click Logout
+  20. ✓ Return to login page
+
+═════════════════════════════════════════════════════════════════════════════
+
+🎉 ALL TESTS PASSED?
+═════════════════════════════════════════════════════════════════════════════
+
+If you checked all boxes above ✓
+
+System is working perfectly! 🚑💚
+
+═════════════════════════════════════════════════════════════════════════════

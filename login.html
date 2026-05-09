@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Life Corridor</title>
+<meta name="description" content="Sign in to your Life Corridor dashboard. Role-based access for Hospital Admins and Ambulance Drivers.">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --g1:#00c853;--g2:#00b4d8;--g3:#0077b6;--g4:#023e8a;
+  --dark:#0a0f1a;--dark2:#0d1526;--card:#111827;--card2:#1a2235;
+  --text:#e8f4fd;--muted:#8899b0;--accent:#00c853;
+  --warn:#ff6b35;--amber:#ffd166;
+}
+.ambulance-flip{display:inline-block;transform:scaleX(-1)}
+html{scroll-behavior:smooth}
+body{font-family:'Poppins',sans-serif;background:var(--dark);color:var(--text);overflow-x:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0a0f1a}::-webkit-scrollbar-thumb{background:linear-gradient(var(--g1),var(--g2));border-radius:3px}
+
+/* Background */
+.login-bg{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 70% at 30% 20%,rgba(0,200,83,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 60% at 80% 60%,rgba(0,180,216,0.05) 0%,transparent 60%),linear-gradient(180deg,var(--dark) 0%,var(--dark2) 100%)}
+.grid-overlay{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,200,83,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,83,.03) 1px,transparent 1px);background-size:60px 60px;animation:gridMove 25s linear infinite}
+@keyframes gridMove{to{transform:translateY(60px)}}
+
+/* Floating ambient elements */
+.float-orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.15;z-index:0;animation:orbFloat 8s ease-in-out infinite}
+.orb-1{width:300px;height:300px;background:var(--g1);top:-80px;left:-80px;animation-delay:0s}
+.orb-2{width:250px;height:250px;background:var(--g2);bottom:-60px;right:-60px;animation-delay:3s}
+.orb-3{width:200px;height:200px;background:var(--g3);top:50%;right:10%;animation-delay:5s}
+@keyframes orbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.05)}}
+
+/* Login Container */
+.login-container{position:relative;z-index:2;width:min(92vw,460px)}
+
+/* Back link */
+.back-link{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;margin-bottom:28px;transition:.3s;cursor:pointer}
+.back-link:hover{color:var(--g1);transform:translateX(-4px)}
+.back-link svg{width:16px;height:16px;fill:currentColor;transition:.3s}
+
+/* Card */
+.login-card{background:rgba(17,24,39,.85);backdrop-filter:blur(24px);border:1px solid rgba(0,200,83,.12);border-radius:24px;padding:44px 40px;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-radius:24px 24px 0 0}
+.login-card::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 180deg at 50% 50%,transparent 0deg,rgba(0,200,83,.03) 60deg,transparent 120deg);animation:cardShimmer 8s linear infinite;pointer-events:none}
+@keyframes cardShimmer{to{transform:rotate(360deg)}}
+
+/* Header */
+.login-header{text-align:center;margin-bottom:36px;position:relative;z-index:1}
+.login-logo{font-size:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:10px}
+.login-logo-text{font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--g1),var(--g2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-title{font-size:26px;font-weight:800;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* Tabs */
+.auth-tabs{display:flex;gap:4px;margin-bottom:28px;background:var(--card2);padding:4px;border-radius:12px;position:relative;z-index:1}
+.auth-tab{flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Poppins',sans-serif;transition:all .3s}
+.auth-tab.active{background:linear-gradient(135deg,var(--g1),var(--g2));color:#000;box-shadow:0 4px 16px rgba(0,200,83,.25)}
+.auth-tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04)}
+
+/* Form */
+.form-content{position:relative;z-index:1}
+.form-group{margin-bottom:18px}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:1px}
+.form-input{width:100%;padding:13px 16px;background:rgba(26,34,53,.8);border:1px solid rgba(255,255,255,.08);border-radius:12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;outline:none;transition:all .3s}
+.form-input:focus{border-color:var(--g1);background:rgba(0,200,83,.04);box-shadow:0 0 0 3px rgba(0,200,83,.08)}
+.form-input::placeholder{color:rgba(136,153,176,.6)}
+
+/* Role Selector */
+.role-selector{display:flex;gap:12px;margin-bottom:20px}
+.role-card{flex:1;padding:16px 12px;border:2px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(26,34,53,.6);cursor:pointer;transition:all .3s;text-align:center;position:relative;overflow:hidden}
+.role-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,200,83,.08),rgba(0,180,216,.06));opacity:0;transition:.3s}
+.role-card:hover{border-color:rgba(0,200,83,.2);transform:translateY(-2px)}
+.role-card:hover::before{opacity:1}
+.role-card.active{border-color:var(--g1);background:rgba(0,200,83,.06)}
+.role-card.active::before{opacity:1}
+.role-card.active::after{content:'✓';position:absolute;top:8px;right:8px;width:20px;height:20px;background:var(--g1);color:#000;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.role-icon{font-size:28px;margin-bottom:8px}
+.role-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.role-desc{font-size:10px;color:var(--muted)}
+
+/* Submit */
+.submit-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--g1),var(--g2));color:#000;font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .3s;margin-top:4px;position:relative;overflow:hidden}
+.submit-btn:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,200,83,.3)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn.loading{pointer-events:none;opacity:.7}
+.submit-btn.loading::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:btnShimmer 1.5s infinite}
+@keyframes btnShimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* Demo hint */
+.demo-hint{margin-top:16px;padding:12px;background:rgba(0,180,216,.06);border:1px solid rgba(0,180,216,.15);border-radius:10px;font-size:11px;color:var(--g2);text-align:center;line-height:1.6}
+.demo-hint strong{color:var(--text);font-weight:600}
+
+/* Error */
+.error-msg{padding:10px 14px;background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);border-radius:10px;font-size:12px;color:#ff6b6b;margin-bottom:16px;display:none;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Success animation */
+.success-overlay{position:fixed;inset:0;background:rgba(10,15,26,.9);backdrop-filter:blur(12px);z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;opacity:0;pointer-events:none;transition:all .4s}
+.success-overlay.show{opacity:1;pointer-events:all}
+.success-check{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--g1),var(--g2));display:flex;align-items:center;justify-content:center;font-size:36px;transform:scale(0);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.success-overlay.show .success-check{transform:scale(1)}
+.success-text{font-size:18px;font-weight:700;color:var(--text);opacity:0;transform:translateY(10px);transition:all .3s .3s}
+.success-overlay.show .success-text{opacity:1;transform:translateY(0)}
+.success-sub{font-size:13px;color:var(--muted);opacity:0;transition:all .3s .5s}
+.success-overlay.show .success-sub{opacity:1}
+
+/* Particles */
+.particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--g1);opacity:.3;animation:particleFloat linear infinite}
+@keyframes particleFloat{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:.3}90%{opacity:.3}100%{transform:translateY(-10vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<!-- Background Effects -->
+<div class="login-bg"></div>
+<div class="grid-overlay"></div>
+<div class="float-orb orb-1"></div>
+<div class="float-orb orb-2"></div>
+<div class="float-orb orb-3"></div>
+<div class="particles" id="particles"></div>
+
+<!-- Success Overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-check">✓</div>
+  <div class="success-text" id="successText">Welcome back!</div>
+  <div class="success-sub" id="successSub">Redirecting to dashboard...</div>
+</div>
+
+<!-- Login Container -->
+<div class="login-container">
+  <a class="back-link" href="index.html">
+    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    Back to Home
+  </a>
+
+  <div class="login-card">
+    <!-- Header -->
+    <div class="login-header">
+      <div class="login-logo"><span class="ambulance-flip">🚑</span> <span class="login-logo-text">Life Corridor</span></div>
+      <div class="login-title">Welcome Back 👋</div>
+      <div class="login-sub">Sign in to access your dashboard</div>
+    </div>
+
+    <!-- Auth Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- LOGIN FORM -->
+    <div class="form-content" id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="admin@lifecorridor.io" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="submit-btn" id="loginBtn" onclick="handleLogin()">Sign In →</button>
+      <div class="demo-hint">
+        <strong>Demo Accounts:</strong><br>
+        Admin: <strong>admin@lifecorridor.io</strong> &nbsp;|&nbsp; Driver: <strong>driver@lifecorridor.io</strong><br>
+        Use any password
+      </div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div class="form-content" id="signupForm" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" id="signupName" placeholder="Yash Keshri" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input class="form-input" type="email" id="signupEmail" placeholder="you@lifecorridor.io" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Select Your Role</label>
+      </div>
+      <div class="role-selector">
+        <div class="role-card active" id="roleAdmin" onclick="selectRole('admin')">
+          <div class="role-icon">🏥</div>
+          <div class="role-name">Hospital Admin</div>
+          <div class="role-desc">Manage hospital ops, signals & analytics</div>
+        </div>
+        <div class="role-card" id="roleDriver" onclick="selectRole('driver')">
+          <div class="role-icon"><span class="ambulance-flip">🚑</span></div>
+          <div class="role-name">Ambulance Driver</div>
+          <div class="role-desc">Request corridors & navigate routes</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="signupPass" placeholder="••••••••" autocomplete="new-password">
+      </div>
+      <button class="submit-btn" id="signupBtn" onclick="handleSignup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== PARTICLES =====
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=Math.random()*8+'s';
+    p.style.width=p.style.height=(1+Math.random()*3)+'px';
+    p.style.background=Math.random()>.5?'var(--g1)':'var(--g2)';
+    c.appendChild(p);
+  }
+})();
+
+// ===== AUTH STATE =====
+let currentTab='login';
+let selectedRole='admin';
+
+// Check URL for tab parameter and auto-switch
+(function checkURLParams(){
+  const params=new URLSearchParams(window.location.search);
+  const tab=params.get('tab');
+  if(tab==='signup' || tab==='signin'){
+    setTimeout(()=>switchAuthTab(tab==='signin'?'login':'signup'),100);
+  }
+})();
+
+// Check if already logged in
+(function checkAuth(){
+  const session=JSON.parse(localStorage.getItem('lc_session')||'null');
+  if(session && session.loggedIn){
+    if(session.role==='admin') window.location.href='admin.html';
+    else window.location.href='driver.html';
+  }
+})();
+
+// ===== TAB SWITCH =====
+function switchAuthTab(tab){
+  currentTab=tab;
+  document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+  document.getElementById('tabSignup').classList.toggle('active',tab==='signup');
+  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
+  document.getElementById('signupForm').style.display=tab==='signup'?'block':'none';
+  document.getElementById('errorMsg').style.display='none';
+}
+
+// ===== ROLE SELECTOR =====
+function selectRole(role){
+  selectedRole=role;
+  document.getElementById('roleAdmin').classList.toggle('active',role==='admin');
+  document.getElementById('roleDriver').classList.toggle('active',role==='driver');
+}
+
+// ===== ERROR =====
+function showError(msg){
+  const el=document.getElementById('errorMsg');
+  el.textContent=msg;
+  el.style.display='block';
+  // Re-trigger animation
+  el.style.animation='none';
+  el.offsetHeight;
+  el.style.animation='shake .3s ease';
+}
+
+// ===== LOGIN =====
+function handleLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('loginPass').value;
+
+  if(!email){showError('Please enter your email address.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showError('Please enter a valid email address.');return;}
+  if(!pass){showError('Please enter your password.');return;}
+  if(pass.length<6){showError('Password must be at least 6 characters.');return;}
+
+  const btn=document.getElementById('loginBtn');
+  btn.classList.add('loading');
+  btn.textContent='Signing in...';
+
+  // Determine role from email
+  let role='driver';
+  let name=email.split('@')[0].toUpperCase();
+  
+  const emailLower=email.toLowerCase();
+  if(emailLower.includes('admin')){
+    role='admin';
+    name='Admin User';
+  } else if(emailLower.includes('driver')){
+    role='driver';
+    name='Driver User';
+  } else {
+    // Default to driver for other emails
+    role='driver';
+    name='Driver User';
+  }
+
+  setTimeout(()=>{
+    // Store session with additional metadata
+    const session={
+      loggedIn:true,
+      name:name,
+      email:email,
+      role:role,
+      loginTime:Date.now(),
+      lastActive:Date.now()
+    };
+    localStorage.setItem('lc_session',JSON.stringify(session));
+
+    // Show success
+    showSuccess(name,role);
+  },1200);
+}
+
+// ===== SIGNUP =====
+function handleSignup(){
+  const name=document.getElementById('signupName').value.trim();
+  const email=document.getElementById('signupEmail').value.trim();
+  const pass=document.getElementById('signupPass').value;
+
+  if(!name){showError('Please enter your full name.');return;}
+  if(name.length<2){showError('Name must be at least 2 characters.');return;}
+  if(!email){showError('Please enter your email address.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showError('Please enter a valid email address.');return;}
+  if(!pass){showError('Please create a password.');return;}
+  if(pass.length<6){showError('Password must be at least 6 characters.');return;}
+
+  const btn=document.getElementById('signupBtn');
+  btn.classList.add('loading');
+  btn.textContent='Creating account...';
+
+  const role=selectedRole;
+
+  setTimeout(()=>{
+    const session={
+      loggedIn:true,
+      name:name,
+      email:email,
+      role:role,
+      loginTime:Date.now(),
+      lastActive:Date.now()
+    };
+    localStorage.setItem('lc_session',JSON.stringify(session));
+    showSuccess(name,role);
+  },1200);
+}
+
+// ===== SUCCESS + REDIRECT =====
+function showSuccess(name,role){
+  const overlay=document.getElementById('successOverlay');
+  document.getElementById('successText').textContent=`Welcome, ${name}!`;
+  document.getElementById('successSub').textContent=
+    role==='admin'?'Redirecting to Admin Dashboard...':'Redirecting to Driver Dashboard...';
+  overlay.classList.add('show');
+
+  setTimeout(()=>{
+    if(role==='admin') window.location.href='admin.html';
+    else window.location.href='driver.html';
+  },1800);
+}
+
+// ===== ENTER KEY =====
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(currentTab==='login') handleLogin();
+    else handleSignup();
+  }
+});
+</script>
+</body>
+</html>
