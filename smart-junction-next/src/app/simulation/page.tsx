@@ -223,7 +223,7 @@ const CompactEmergencyStatus = () => {
 };
 
 
-export default function SmartJunctionDashboard() {
+export default function SmartJunctionDashboard({ isBackground = false }: { isBackground?: boolean }) {
   const [emergency, setEmergency] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [logs, setLogs] = useState<string[]>(['[SYSTEM] Smart Grid initialized.']);
@@ -246,7 +246,7 @@ export default function SmartJunctionDashboard() {
   };
 
   return (
-    <div className="w-screen h-screen bg-[#020617] text-slate-200 overflow-hidden relative font-sans">
+    <div className={`w-screen h-screen ${isBackground ? 'bg-transparent' : 'bg-[#020617]'} text-slate-200 overflow-hidden relative font-sans`}>
       
       {/* 3D CANVAS */}
       <div className="absolute inset-0 z-0">
@@ -259,7 +259,8 @@ export default function SmartJunctionDashboard() {
       </div>
 
       {/* DASHBOARD UI OVERLAY */}
-      <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">
+      {!isBackground && (
+        <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">
         
         {/* TOP BAR */}
         <header className="flex justify-between items-start pointer-events-auto">
@@ -361,7 +362,8 @@ export default function SmartJunctionDashboard() {
         {emergency && (
           <div className="fixed inset-0 pointer-events-none bg-red-500/10 animate-pulse mix-blend-screen z-[-1]"></div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
