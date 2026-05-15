@@ -114,19 +114,12 @@ async function processAICommand(cmd, useVoice = true) {
   }
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer YOUR_GROQ_API_KEY',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: "You are an AI Assistant for the Life-Corridor ambulance dashboard. Be very short, max 1 or 2 sentences." },
-          { role: 'user', content: cmd }
-        ]
-      })
+      body: JSON.stringify({ message: cmd })
     });
     const data = await response.json();
     let reply = actionTaken ? actionText : "I didn't quite catch that.";
