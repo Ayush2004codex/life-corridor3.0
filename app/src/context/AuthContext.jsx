@@ -1,92 +1,123 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { api, setToken, getToken, clearToken } from '../services/api';
 
 const AuthContext = createContext(null);
-
-const USERS_KEY = 'lc_users';
-const SESSION_KEY = 'lc_session';
-
-function getStoredUsers() {
-  try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
-  catch { return []; }
-}
-
-function getStoredSession() {
-  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-  catch { return null; }
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Hydrate from localStorage on mount
+  // Restore session from token on mount
   useEffect(() => {
-    const session = getStoredSession();
-    if (session && session.loggedIn) {
-      setUser(session);
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
+    const restoreSession = async () => {
+      try {
+        const token = getToken();
+        if (token) {
+          setToken(token);
+          const userData = await api.auth.getMe();
+          setUser(userData);
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error('Session restoration failed:', err);
+        clearToken();
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    restoreSession();
   }, []);
 
-  const register = (name, email, password, role) => {
-    const users = getStoredUsers();
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-      return { success: false, message: 'An account with this email already exists.' };
-    }
-    const newUser = { name, email, password, role };
-    users.push(newUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  const register = async (name, email, password, role) => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await api.auth.register({
+        name,
+        email,
+        password,
+        role,
+      });
 
-    // Auto-login after registration
-    const session = { loggedIn: true, name, email, role, loginTime: Date.now() };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setUser(session);
-    setIsAuthenticated(true);
-    return { success: true, role };
+      setToken(response.tokens.accessToken);
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return { success: true, role: response.user.role };
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Registration failed. Please try again.';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const login = (email, password) => {
-    const users = getStoredUsers();
-    const found = users.find(
-      u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+  const login = async (email, password) => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const response = await api.auth.login(email, password);
+
+      setToken(response.tokens.accessToken);
+      setUser(response.user);
+      setIsAuthenticated(true);
+      return { success: true, role: response.user.role };
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Login failed. Please try again.';
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.auth.logout();
+    } catch (err) {
+      console.error('Logout API error (non-critical):', err);
+    } finally {
+      clearToken();
+      setUser(null);
+      setIsAuthenticated(false);
+      setError(null);
+    }
+  };
+
+  const clearError = () => setError(null);
+
+  const value = {
+    user,
+    isAuthenticated,
+    isLoading,
+    error,
+    login,
+    logout,
+    register,
+    clearError,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-[#0a0f1a]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00c853]"></div>
+      </div>
     );
-    if (!found) {
-      // Demo accounts fallback
-      if (email.toLowerCase().includes('admin')) {
-        const session = { loggedIn: true, name: 'Admin User', email, role: 'admin', loginTime: Date.now() };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        setUser(session);
-        setIsAuthenticated(true);
-        return { success: true, role: 'admin' };
-      }
-      if (email.toLowerCase().includes('driver')) {
-        const session = { loggedIn: true, name: 'Driver User', email, role: 'driver', loginTime: Date.now() };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        setUser(session);
-        setIsAuthenticated(true);
-        return { success: true, role: 'driver' };
-      }
-      return { success: false, message: 'Invalid email or password.' };
-    }
-    const session = { loggedIn: true, name: found.name, email: found.email, role: found.role, loginTime: Date.now() };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    setUser(session);
-    setIsAuthenticated(true);
-    return { success: true, role: found.role };
-  };
-
-  const logout = () => {
-    localStorage.removeItem(SESSION_KEY);
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  if (loading) return null; // Prevent flash
+  }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

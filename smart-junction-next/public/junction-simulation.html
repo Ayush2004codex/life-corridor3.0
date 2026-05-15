@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Junction Control System - Life Corridor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050b14;
+      --card: rgba(10, 20, 40, 0.8);
+      --accent: #00e5ff;
+      --green: #00ff66;
+      --red: #ff3366;
+      --amber: #ffaa00;
+      --text: #e2e8f0;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+    
+    /* DASHBOARD UI */
+    .dashboard {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 10; padding: 24px;
+      display: grid; grid-template-columns: 320px 1fr 320px; gap: 24px;
+    }
+    .panel {
+      background: var(--card); border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 16px; padding: 20px; backdrop-filter: blur(12px);
+      pointer-events: auto; display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .panel-title {
+      font-family: 'Orbitron', sans-serif; color: var(--accent);
+      font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
+      border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding-bottom: 12px;
+    }
+    
+    /* DATA WIDGETS */
+    .data-row { display: flex; justify-content: space-between; align-items: center; }
+    .data-label { font-size: 12px; color: #94a3b8; }
+    .data-value { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 16px; color: #fff; }
+    
+    /* BUTTONS */
+    .btn {
+      background: rgba(0, 255, 102, 0.1); border: 1px solid var(--green);
+      color: var(--green); padding: 14px; border-radius: 8px; font-family: 'Orbitron', sans-serif;
+      font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+      transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+    }
+    .btn:hover { background: var(--green); color: #000; box-shadow: 0 0 30px rgba(0, 255, 102, 0.6); }
+    .btn.active { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 0 30px rgba(255, 51, 102, 0.6); }
+    
+    /* SIGNALS UI */
+    .signal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .signal-box { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .signal-light { width: 16px; height: 16px; border-radius: 50%; margin: 0 auto 8px; }
+    .light-green { background: var(--green); box-shadow: 0 0 15px var(--green); }
+    .light-red { background: var(--red); box-shadow: 0 0 15px var(--red); }
+    
+    /* CANVAS */
+    #simCanvas {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1;
+    }
+    
+    /* OVERLAYS */
+    .emergency-overlay {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(circle, rgba(255,51,102,0.1) 0%, rgba(0,0,0,0) 70%);
+      opacity: 0; transition: opacity 0.5s; z-index: 2; pointer-events: none;
+    }
+    .emergency-overlay.active { opacity: 1; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    
+    .status-badge {
+      position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); border: 1px solid var(--accent); padding: 12px 24px;
+      border-radius: 30px; font-family: 'Orbitron', sans-serif; font-weight: 700;
+      color: var(--accent); z-index: 20; display: flex; align-items: center; gap: 12px;
+    }
+    .pulse-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: flash 1s infinite; }
+    @keyframes flash { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- SIMULATION CANVAS -->
+  <canvas id="simCanvas"></canvas>
+  <div class="emergency-overlay" id="dangerOverlay"></div>
+  
+  <div class="status-badge">
+    <div class="pulse-dot" id="statusDot"></div>
+    <span id="statusText">SYSTEM NORMAL - AI MONITORING</span>
+  </div>
+
+  <!-- DASHBOARD OVERLAY -->
+  <div class="dashboard">
+    
+    <!-- LEFT PANEL: CONTROLS & METRICS -->
+    <div class="panel">
+      <div class="panel-title">MISSION CONTROL</div>
+      
+      <button class="btn" id="triggerBtn" onclick="toggleEmergency()">🚨 ACTIVATE GREEN CORRIDOR</button>
+      <button class="btn" onclick="window.open('http://localhost:3000/simulation', '_blank')" style="border-color: #00e5ff; color: #00e5ff; box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);">🌐 OPEN 3D SMART CITY</button>
+      
+      <div style="margin-top: 16px;">
+        <div class="panel-title" style="font-size: 12px;">LIVE TELEMETRY</div>
+        <div class="data-row" style="margin-top:12px;">
+          <span class="data-label">Civilian Vehicles</span>
+          <span class="data-value" id="ui-civ">0</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Avg Speed</span>
+          <span class="data-value" id="ui-spd">45 km/h</span>
+        </div>
+        <div class="data-row">
+          <span class="data-label">Junction Efficiency</span>
+          <span class="data-value" style="color:var(--green)" id="ui-eff">98%</span>
+        </div>
+      </div>
+
+      <div style="margin-top: auto; padding: 12px; background: rgba(0, 229, 255, 0.1); border-radius: 8px; font-size: 11px; color: var(--accent);">
+        AI Engine Active. Simulating cross-traffic collision avoidance and dynamic lane clearing.
+      </div>
+    </div>
+
+    <!-- MIDDLE: EMPTY FOR CANVAS VIEW -->
+    <div></div>
+
+    <!-- RIGHT PANEL: JUNCTION STATUS -->
+    <div class="panel">
+      <div class="panel-title">JUNCTION ALPHA - STATUS</div>
+      
+      <div class="signal-grid">
+        <div class="signal-box">
+          <div class="signal-light light-green" id="light-north"></div>
+          <div class="data-label" style="font-size:10px">HIGHWAY (N/S)</div>
+          <div class="data-value" style="font-size:12px" id="lbl-north">FLOWING</div>
+        </div>
+        <div class="signal-box">
+          <div class="signal-light light-red" id="light-east"></div>
+          <div class="data-label" style="font-size:10px">SIDE ROADS (E/W)</div>
+          <div class="data-value" style="font-size:12px; color:var(--red)" id="lbl-east">BLOCKED</div>
+        </div>
+      </div>
+
+      <div class="panel-title" style="font-size: 12px; margin-top: 16px;">AI ACTION LOG</div>
+      <div id="ai-logs" style="flex: 1; font-family: monospace; font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 100px;">
+        <div>[SYSTEM] Initializing Smart City Grid...</div>
+        <div>[AI] Traffic patterns stabilized.</div>
+      </div>
+
+      <!-- COMPACT EMERGENCY STATUS VIEW -->
+      <div style="margin-top: 16px; border-top: 1px solid rgba(0, 229, 255, 0.2); padding-top: 16px;">
+        <div class="panel-title" style="font-size: 12px; color: #ff3366;">🚨 IN-TRANSIT EMERGENCY STATUS</div>
+        <div style="background: rgba(255,51,102,0.05); border: 1px solid rgba(255,51,102,0.2); border-radius: 8px; padding: 12px; margin-top: 12px;">
+          <div class="data-row">
+            <span class="data-label">Ambulance ID</span>
+            <span class="data-value" style="color:#00e5ff">AMB-007</span>
+          </div>
+          <div class="data-row" style="margin-top:8px;">
+            <span class="data-label">Priority Level</span>
+            <span class="data-value" style="color:#ff3366; display:flex; align-items:center; gap:6px;">
+              <div style="width:6px; height:6px; background:#ff3366; border-radius:50%; animation: flash 1s infinite;"></div>
+              CODE RED
+            </span>
+          </div>
+          <div class="data-row" style="margin-top:8px;">
+            <span class="data-label">Patient State</span>
+            <span class="data-value" id="cmd-state">Awaiting Data...</span>
+          </div>
+          <div class="data-row" style="margin-top:8px;">
+            <span class="data-label">Dest ETA</span>
+            <span class="data-value" id="cmd-eta">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <script>
+    /* ==================================================
+       ADVANCED HTML5 CANVAS SMART JUNCTION ENGINE
+       ================================================== */
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width, height, centerX, centerY;
+    const roadWidth = 120;
+    const laneWidth = roadWidth / 2;
+    
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // STATE
+    let emergencyMode = false;
+    let vehicles = [];
+    let ambulance = null;
+    let frameCount = 0;
+    
+    // TRAFFIC LIGHTS (0 = Green, 1 = Red)
+    // By default, Highway (North-South) is Green, Side roads (East-West) are Red
+    let signalState = { ns: 0, ew: 1 };
+    let lastToggle = 0;
+    const TOGGLE_INTERVAL = 400; // frames
+
+    function addLog(msg, type="INFO") {
+      const logs = document.getElementById('ai-logs');
+      const el = document.createElement('div');
+      const color = type === 'WARN' ? 'var(--amber)' : (type === 'CRIT' ? 'var(--red)' : 'var(--green)');
+      el.innerHTML = `<span style="color:${color}">[${type}]</span> ${msg}`;
+      logs.prepend(el);
+      if(logs.children.length > 6) logs.removeChild(logs.lastChild);
+    }
+
+    // VEHICLE CLASS
+    class Vehicle {
+      constructor(dir) {
+        this.dir = dir; // 'N', 'S', 'E', 'W'
+        this.width = 16;
+        this.length = 32;
+        this.speed = Math.random() * 2 + 2;
+        this.maxSpeed = this.speed;
+        this.color = `hsl(${Math.random()*360}, 60%, 50%)`;
+        this.isAmbulance = false;
+        
+        // Positioning based on direction
+        if(dir === 'S') { // Going South (starts North)
+          this.x = centerX - laneWidth/2; this.y = -50; this.vx = 0; this.vy = 1;
+        } else if(dir === 'N') { // Going North (starts South)
+          this.x = centerX + laneWidth/2; this.y = height+50; this.vx = 0; this.vy = -1;
+        } else if(dir === 'E') { // Going East (starts West)
+          this.x = -50; this.y = centerY + laneWidth/2; this.vx = 1; this.vy = 0;
+          this.width = 32; this.length = 16;
+        } else if(dir === 'W') { // Going West (starts East)
+          this.x = width+50; this.y = centerY - laneWidth/2; this.vx = -1; this.vy = 0;
+          this.width = 32; this.length = 16;
+        }
+      }
+
+      update(index) {
+        // AI BRAKING LOGIC (Stop at Red Lights & Stop for cars ahead)
+        let distanceToJunction = Infinity;
+        let facingRed = false;
+
+        if (this.dir === 'S') {
+          distanceToJunction = (centerY - roadWidth/2) - this.y;
+          facingRed = signalState.ns === 1;
+        } else if (this.dir === 'N') {
+          distanceToJunction = this.y - (centerY + roadWidth/2);
+          facingRed = signalState.ns === 1;
+        } else if (this.dir === 'E') {
+          distanceToJunction = (centerX - roadWidth/2) - this.x;
+          facingRed = signalState.ew === 1;
+        } else if (this.dir === 'W') {
+          distanceToJunction = this.x - (centerX + roadWidth/2);
+          facingRed = signalState.ew === 1;
+        }
+
+        let targetSpeed = this.maxSpeed;
+
+        // Stop for red light at stop line
+        if (facingRed && distanceToJunction > 0 && distanceToJunction < 80) {
+          targetSpeed = 0;
+        }
+
+        // Emergency Override: Side roads MUST stop if ambulance is coming!
+        if (emergencyMode && !this.isAmbulance) {
+          if (this.dir === 'E' || this.dir === 'W') {
+            // Hard stop for side roads
+            if (distanceToJunction > -20 && distanceToJunction < 120) targetSpeed = 0;
+          }
+        }
+
+        // Avoid rear-ending cars ahead
+        for (let i=0; i<vehicles.length; i++) {
+          if (i === index) continue;
+          let other = vehicles[i];
+          if (other.dir === this.dir) {
+            let dist = 0;
+            if (this.dir === 'S' && other.y > this.y) dist = other.y - this.y;
+            else if (this.dir === 'N' && other.y < this.y) dist = this.y - other.y;
+            else if (this.dir === 'E' && other.x > this.x) dist = other.x - this.x;
+            else if (this.dir === 'W' && other.x < this.x) dist = this.x - other.x;
+            
+            if (dist > 0 && dist < 60) targetSpeed = Math.min(targetSpeed, other.speed);
+            if (dist > 0 && dist < 40) targetSpeed = 0;
+          }
+        }
+
+        // Ambulance never stops for red lights!
+        if (this.isAmbulance) targetSpeed = 6; 
+
+        // Apply acceleration/braking
+        if (this.speed < targetSpeed) this.speed += 0.1;
+        if (this.speed > targetSpeed) this.speed -= 0.2;
+        if (this.speed < 0) this.speed = 0;
+
+        this.x += this.vx * this.speed;
+        this.y += this.vy * this.speed;
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        
+        if (this.isAmbulance) {
+          ctx.fillStyle = '#fff';
+          ctx.shadowColor = (frameCount % 20 < 10) ? '#ff3366' : '#0066ff';
+          ctx.shadowBlur = 20;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        
+        ctx.fillRect(this.x - this.width/2, this.y - this.length/2, this.width, this.length);
+        ctx.shadowBlur = 0; // reset
+      }
+    }
+
+    function spawnAmbulance() {
+      let amb = new Vehicle('S'); // Ambulance drives South on Highway
+      amb.isAmbulance = true;
+      amb.color = '#ffffff';
+      vehicles.push(amb);
+      ambulance = amb;
+      addLog("Ambulance AMB-007 dispatched on Highway South.", "CRIT");
+    }
+
+    // MAIN DRAW LOOP
+    function drawGrid() {
+      // Background
+      ctx.fillStyle = '#050b14';
+      ctx.fillRect(0, 0, width, height);
+
+      // Roads
+      ctx.fillStyle = '#111827';
+      // Vertical Highway
+      ctx.fillRect(centerX - roadWidth/2, 0, roadWidth, height);
+      // Horizontal Side Road
+      ctx.fillRect(0, centerY - roadWidth/2, width, roadWidth);
+
+      // Intersection box
+      ctx.fillStyle = '#1a2235';
+      ctx.fillRect(centerX - roadWidth/2, centerY - roadWidth/2, roadWidth, roadWidth);
+
+      // Road markings (Dashed lines)
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([20, 20]);
+      
+      // Vertical dashed
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0); ctx.lineTo(centerX, centerY - roadWidth/2);
+      ctx.moveTo(centerX, centerY + roadWidth/2); ctx.lineTo(centerX, height);
+      ctx.stroke();
+
+      // Horizontal dashed
+      ctx.beginPath();
+      ctx.moveTo(0, centerY); ctx.lineTo(centerX - roadWidth/2, centerY);
+      ctx.moveTo(centerX + roadWidth/2, centerY); ctx.lineTo(width, centerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Zebra Crossings
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(centerX - roadWidth/2, centerY - roadWidth/2 - 30, roadWidth, 20); // North
+      ctx.fillRect(centerX - roadWidth/2, centerY + roadWidth/2 + 10, roadWidth, 20); // South
+      ctx.fillRect(centerX - roadWidth/2 - 30, centerY - roadWidth/2, 20, roadWidth); // West
+      ctx.fillRect(centerX + roadWidth/2 + 10, centerY - roadWidth/2, 20, roadWidth); // East
+
+      // Emergency Path Glow (If active)
+      if (emergencyMode) {
+        ctx.fillStyle = 'rgba(0, 255, 102, 0.15)';
+        ctx.fillRect(centerX - roadWidth/2, 0, laneWidth, height);
+      }
+
+      // ----------------------------------------------------
+      // AI TRAFFIC HEATMAP SYSTEM
+      // ----------------------------------------------------
+      let congestionCount = 0;
+      vehicles.forEach(v => {
+        const dx = v.x - centerX;
+        const dy = v.y - centerY;
+        // Count slow/stopped civilian vehicles near junction
+        if (Math.sqrt(dx*dx + dy*dy) < 250 && v.speed < 1.5 && !v.isAmbulance) {
+          congestionCount++;
+        }
+      });
+
+      // Calculate Heatmap Color based on density
+      let r = 0, g = 255, b = 102; // Green (Smooth)
+      if (congestionCount > 4) { r = 255; g = 51; b = 102; } // Red (Heavy)
+      else if (congestionCount >= 2) { r = 255; g = 170; b = 0; } // Yellow (Medium)
+
+      // Animated glowing overlays & pulse effects
+      const alpha = 0.1 + Math.abs(Math.sin(frameCount * 0.05)) * 0.25;
+      const gradient = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, 250);
+      gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+      gradient.addColorStop(0.4, `rgba(${r}, ${g}, ${b}, ${alpha * 0.5})`);
+      gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+
+      ctx.globalCompositeOperation = 'lighter'; // Additive blending for neon glow
+      ctx.fillStyle = gradient;
+      ctx.fillRect(centerX - 250, centerY - 250, 500, 500);
+      ctx.globalCompositeOperation = 'source-over'; // Reset
+    }
+
+    function updateSimulation() {
+      frameCount++;
+
+      // Traffic Light Toggle Logic (Normal Mode)
+      if (!emergencyMode) {
+        if (frameCount - lastToggle > TOGGLE_INTERVAL) {
+          lastToggle = frameCount;
+          signalState.ns = signalState.ns === 0 ? 1 : 0;
+          signalState.ew = signalState.ns === 0 ? 1 : 0;
+          updateDashboardUI();
+        }
+      }
+
+      // Random Vehicle Spawning
+      if (Math.random() < 0.02) {
+        const dirs = ['N', 'S', 'E', 'W'];
+        vehicles.push(new Vehicle(dirs[Math.floor(Math.random()*dirs.length)]));
+      }
+
+      drawGrid();
+
+      // Update & Draw Vehicles
+      document.getElementById('ui-civ').textContent = vehicles.length;
+      
+      for (let i = vehicles.length - 1; i >= 0; i--) {
+        let v = vehicles[i];
+        v.update(i);
+        v.draw();
+        
+        // Remove off-screen vehicles
+        if (v.x < -100 || v.x > width+100 || v.y < -100 || v.y > height+100) {
+          if(v.isAmbulance) {
+            toggleEmergency(); // Reset when ambulance leaves
+            addLog("Ambulance cleared junction.", "INFO");
+          }
+          vehicles.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(updateSimulation);
+    }
+
+    // TOGGLE EMERGENCY MODE
+    function toggleEmergency() {
+      emergencyMode = !emergencyMode;
+      const btn = document.getElementById('triggerBtn');
+      const overlay = document.getElementById('dangerOverlay');
+      const txt = document.getElementById('statusText');
+      const dot = document.getElementById('statusDot');
+
+      if (emergencyMode) {
+        btn.classList.add('active');
+        btn.innerHTML = '🛑 CANCEL GREEN CORRIDOR';
+        overlay.classList.add('active');
+        txt.textContent = 'CRITICAL ALERT - CORRIDOR ACTIVE';
+        txt.style.color = 'var(--red)';
+        dot.style.background = 'var(--red)';
+        dot.style.boxShadow = '0 0 10px var(--red)';
+        
+        // AI ACTION: Force Signals
+        signalState.ns = 0; // Highway Green
+        signalState.ew = 1; // Side roads Red
+        addLog("AI Overriding Signals. Side roads locked down.", "WARN");
+        
+        spawnAmbulance();
+      } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '🚨 ACTIVATE GREEN CORRIDOR';
+        overlay.classList.remove('active');
+        txt.textContent = 'SYSTEM NORMAL - AI MONITORING';
+        txt.style.color = 'var(--accent)';
+        dot.style.background = 'var(--accent)';
+        dot.style.boxShadow = '0 0 10px var(--accent)';
+        addLog("Corridor deactivated. Restoring normal traffic.", "INFO");
+      }
+      updateDashboardUI();
+    }
+
+    function updateDashboardUI() {
+      const ln = document.getElementById('light-north');
+      const lnl = document.getElementById('lbl-north');
+      const le = document.getElementById('light-east');
+      const lel = document.getElementById('lbl-east');
+      
+      if (signalState.ns === 0) {
+        ln.className = 'signal-light light-green'; lnl.textContent = 'FLOWING'; lnl.style.color = 'var(--green)';
+      } else {
+        ln.className = 'signal-light light-red'; lnl.textContent = 'STOPPED'; lnl.style.color = 'var(--red)';
+      }
+
+      if (signalState.ew === 0) {
+        le.className = 'signal-light light-green'; lel.textContent = 'FLOWING'; lel.style.color = 'var(--green)';
+      } else {
+        le.className = 'signal-light light-red'; lel.textContent = 'BLOCKED'; lel.style.color = 'var(--red)';
+      }
+    }
+
+    updateDashboardUI();
+    updateSimulation();
+
+    // ==========================================
+    // SYNC WITH MEDICAL AI FROM DRIVER
+    // ==========================================
+    setInterval(() => {
+      const v = JSON.parse(localStorage.getItem('medical_vitals') || 'null');
+      if (v) {
+        document.getElementById('cmd-state').textContent = v.state;
+        if (v.state === 'Critical') {
+          document.getElementById('cmd-state').style.color = '#ff3366';
+        } else if (v.state === 'High Risk') {
+          document.getElementById('cmd-state').style.color = '#ffaa00';
+        } else {
+          document.getElementById('cmd-state').style.color = '#00ff66';
+        }
+        document.getElementById('cmd-eta').textContent = v.eta;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

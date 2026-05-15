@@ -11,22 +11,26 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!email.trim()) { setError('Please enter your email address.'); return; }
-    if (!password) { setError('Please enter your password.'); return; }
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password.');
+      return;
+    }
 
     setLoading(true);
-    setTimeout(() => {
-      const result = login(email, password);
-      if (result.success) {
-        navigate(result.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard', { replace: true });
-      } else {
-        setError(result.message);
-        setLoading(false);
-      }
-    }, 800);
+    const result = await login(email, password);
+    if (result.success) {
+      navigate(result.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard', { replace: true });
+    } else {
+      setError(result.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,7 +66,8 @@ export default function LoginPage() {
                 <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="admin@lifecorridor.io"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  disabled={loading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50"
                   style={{ background: 'rgba(26,34,53,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
               </div>
             </div>
@@ -73,7 +78,8 @@ export default function LoginPage() {
                 <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  disabled={loading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50"
                   style={{ background: 'rgba(26,34,53,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
               </div>
             </div>
@@ -85,7 +91,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-5 p-3 rounded-xl text-center text-xs leading-relaxed" style={{ background: 'rgba(0,180,216,0.06)', border: '1px solid rgba(0,180,216,0.15)', color: 'var(--color-secondary)' }}>
-            <strong className="text-[var(--color-text)]">Demo:</strong> admin@lifecorridor.io or driver@lifecorridor.io — any password
+            <strong className="text-[var(--color-text)]">Test:</strong> Use the credentials you registered with
           </div>
 
           <p className="text-center text-sm text-[var(--color-muted)] mt-6">

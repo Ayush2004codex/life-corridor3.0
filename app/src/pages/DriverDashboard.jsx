@@ -2,53 +2,121 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Clock, Radio, Gauge, MapPin } from 'lucide-react';
+import { api } from '../services/api';
 
 export default function DriverDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [hospitals, setHospitals] = useState([]);
   const [corridorActive, setCorridorActive] = useState(false);
   const [arrived, setArrived] = useState(false);
-  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    destinationHospital: '',
+    emergencyType: 'accident',
+    patientName: '',
+  });
+
   const ambRef = useRef(null);
   const intervalRef = useRef(null);
 
-  const handleLogout = () => { logout(); navigate('/', { replace: true }); };
+  useEffect(() => {
+    fetchHospitals();
+  }, []);
 
-  const activateCorridor = () => {
-    setCorridorActive(true);
-    setArrived(false);
+  const fetchHospitals = async () => {
+    try {
+      const data = await api.hospitals.getAll();
+      setHospitals(data || []);
+      if (data && data.length > 0) {
+        setFormData(prev => ({ ...prev, destinationHospital: data[0]._id }));
+      }
+    } catch (err) {
+      console.error('Error fetching hospitals:', err);
+      setError('Failed to load hospitals');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/', { replace: true });
+  };
+
+  const activateCorridor = async (e) => {
+    e.preventDefault();
+
+    if (!formData.patientName.trim()) {
+      setError('Please enter patient name');
+      return;
+    }
+
+    if (!formData.destinationHospital) {
+      setError('Please select a hospital');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.emergencies.create({
+        type: formData.emergencyType,
+        priority: 'high',
+        patientName: formData.patientName,
+        pickupLocation: {
+          latitude: 22.5726,
+          longitude: 88.3639,
+          address: 'Current Location, Kolkata',
+        },
+        destinationHospital: formData.destinationHospital,
+      });
+
+      console.log('Emergency created:', response);
+      setCorridorActive(true);
+      setArrived(false);
+      setFormData({ ...formData, patientName: '' });
+      setError(null);
+    } catch (err) {
+      console.error('Error creating emergency:', err);
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to create emergency request';
+      setError(errorMsg);
+      setCorridorActive(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     if (!corridorActive) return;
 
     const routePoints = [
-      {x: 94, y: 340},
-      {x: 94, y: 154},
-      {x: 414, y: 154},
-      {x: 414, y: 74},
-      {x: 750, y: 74}
+      { x: 94, y: 340 },
+      { x: 94, y: 154 },
+      { x: 414, y: 154 },
+      { x: 414, y: 74 },
+      { x: 750, y: 74 },
     ];
-    
+
     let currentSegment = 0;
-    let progress = 0; // 0 to 1
-    const speed = 0.005; // Adjust for speed
-    
+    let progress = 0;
+    const speed = 0.005;
+
     if (intervalRef.current) clearInterval(intervalRef.current);
-    
+
     intervalRef.current = setInterval(() => {
       if (currentSegment >= routePoints.length - 1) {
         clearInterval(intervalRef.current);
         setArrived(true);
         return;
       }
-      
+
       progress += speed;
       if (progress >= 1) {
         progress = 0;
         currentSegment++;
       }
-      
+
       if (currentSegment < routePoints.length - 1 && ambRef.current) {
         const p1 = routePoints[currentSegment];
         const p2 = routePoints[currentSegment + 1];
@@ -89,31 +157,68 @@ export default function DriverDashboard() {
           {/* Corridor Request */}
           <div className="rounded-2xl p-7" style={{ background: 'var(--color-card)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <h2 className="text-lg font-bold mb-5 flex items-center gap-2">🚀 Request Emergency Corridor</h2>
-            <div className="space-y-4">
+            {error && (
+              <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.25)', color: '#ff6b6b' }}>
+                {error}
+              </div>
+            )}
+            <form onSubmit={activateCorridor} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1.5">Patient Name</label>
+                <input
+                  type="text"
+                  value={formData.patientName}
+                  onChange={e => setFormData({ ...formData, patientName: e.target.value })}
+                  placeholder="Patient name"
+                  disabled={loading || corridorActive}
+                  className="w-full px-4 py-3.5 rounded-xl text-sm disabled:opacity-50"
+                  style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}
+                />
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1.5">Pickup Location</label>
-                <input readOnly value="Current Location (Agarpara)" className="w-full px-4 py-3.5 rounded-xl text-sm" style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
+                <input
+                  readOnly
+                  value="Current Location (Kolkata)"
+                  className="w-full px-4 py-3.5 rounded-xl text-sm"
+                  style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1.5">Destination Hospital</label>
-                <select className="w-full px-4 py-3.5 rounded-xl text-sm appearance-none cursor-pointer" style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}>
-                  <option>SSKM Hospital, Kolkata</option>
-                  <option>Barrackpore Hospital</option>
-                  <option>RG Kar Medical College</option>
-                  <option>NRS Medical College</option>
+                <select
+                  value={formData.destinationHospital}
+                  onChange={e => setFormData({ ...formData, destinationHospital: e.target.value })}
+                  disabled={loading || corridorActive}
+                  className="w-full px-4 py-3.5 rounded-xl text-sm appearance-none cursor-pointer disabled:opacity-50"
+                  style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}
+                >
+                  {hospitals.map(h => (
+                    <option key={h._id} value={h._id}>{h.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-1.5">Emergency Type</label>
-                <select className="w-full px-4 py-3.5 rounded-xl text-sm appearance-none cursor-pointer" style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}>
-                  <option>Cardiac Emergency</option>
-                  <option>Trauma / Accident</option>
-                  <option>Stroke</option>
-                  <option>Burns</option>
+                <select
+                  value={formData.emergencyType}
+                  onChange={e => setFormData({ ...formData, emergencyType: e.target.value })}
+                  disabled={loading || corridorActive}
+                  className="w-full px-4 py-3.5 rounded-xl text-sm appearance-none cursor-pointer disabled:opacity-50"
+                  style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }}
+                >
+                  <option value="accident">Trauma / Accident</option>
+                  <option value="heart-attack">Cardiac Emergency</option>
+                  <option value="stroke">Stroke</option>
+                  <option value="burn">Burns</option>
                 </select>
               </div>
-              <button onClick={activateCorridor} disabled={corridorActive} className="w-full py-3.5 rounded-xl text-sm font-bold text-black grad-bg transition-all hover:opacity-90 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0">
-                {corridorActive ? 'Corridor Activated' : 'Activate Green Corridor'}
+              <button
+                type="submit"
+                disabled={loading || corridorActive}
+                className="w-full py-3.5 rounded-xl text-sm font-bold text-black grad-bg transition-all hover:opacity-90 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                {loading ? 'Creating...' : corridorActive ? 'Corridor Activated' : 'Activate Green Corridor'}
               </button>
               {corridorActive && !arrived && (
                 <div className="p-5 rounded-xl" style={{ background: 'rgba(0,200,83,0.08)', border: '1px solid rgba(0,200,83,0.3)' }}>
@@ -121,7 +226,7 @@ export default function DriverDashboard() {
                   <p className="text-xs text-[var(--color-text)] leading-relaxed">Route calculated. <strong>All signals ahead overridden to green.</strong> ETA ≈ 6 minutes.</p>
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
           {/* Live Nav */}
@@ -129,10 +234,10 @@ export default function DriverDashboard() {
             <h2 className="text-lg font-bold mb-5 flex items-center gap-2">📍 Live Navigation Status</h2>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: <Clock size={18} />,  val: mapEta,    label: 'Current ETA' },
-                { icon: <Radio size={18} />,   val: mapSignals,  label: 'Signals Cleared' },
-                { icon: <Gauge size={18} />,   val: mapSpeed,     label: 'Speed (km/h)' },
-                { icon: <MapPin size={18} />,  val: mapDist, label: 'Distance Left' },
+                { icon: <Clock size={18} />, val: mapEta, label: 'Current ETA' },
+                { icon: <Radio size={18} />, val: mapSignals, label: 'Signals Cleared' },
+                { icon: <Gauge size={18} />, val: mapSpeed, label: 'Speed (km/h)' },
+                { icon: <MapPin size={18} />, val: mapDist, label: 'Distance Left' },
               ].map(s => (
                 <div key={s.label} className="rounded-xl p-5 text-center" style={{ background: 'var(--color-card-2)', border: '1px solid rgba(255,255,255,0.04)' }}>
                   <div className="text-[var(--color-primary)] flex justify-center mb-2">{s.icon}</div>

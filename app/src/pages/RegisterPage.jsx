@@ -13,24 +13,34 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) { setError('Please enter your full name.'); return; }
-    if (!email.trim()) { setError('Please enter your email address.'); return; }
-    if (!password) { setError('Please create a password.'); return; }
-    if (!role) { setError('Please select your role — Admin or Driver.'); return; }
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Please create a password.');
+      return;
+    }
+    if (!role) {
+      setError('Please select your role — Admin or Driver.');
+      return;
+    }
 
     setLoading(true);
-    setTimeout(() => {
-      const result = register(name, email, password, role);
-      if (result.success) {
-        navigate(result.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard', { replace: true });
-      } else {
-        setError(result.message);
-        setLoading(false);
-      }
-    }, 800);
+    const result = await register(name, email, password, role);
+    if (result.success) {
+      navigate(result.role === 'admin' ? '/admin/dashboard' : '/driver/dashboard', { replace: true });
+    } else {
+      setError(result.message);
+      setLoading(false);
+    }
   };
 
   const roles = [
@@ -69,7 +79,8 @@ export default function RegisterPage() {
                 <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
                   placeholder="Yash Keshri"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  disabled={loading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50"
                   style={{ background: 'rgba(26,34,53,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
               </div>
             </div>
@@ -80,7 +91,8 @@ export default function RegisterPage() {
                 <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="you@lifecorridor.io"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  disabled={loading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50"
                   style={{ background: 'rgba(26,34,53,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
               </div>
             </div>
@@ -115,7 +127,8 @@ export default function RegisterPage() {
                 <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  disabled={loading}
+                  className="w-full pl-11 pr-4 py-3.5 rounded-xl text-sm outline-none transition-all duration-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 disabled:opacity-50"
                   style={{ background: 'rgba(26,34,53,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--color-text)' }} />
               </div>
             </div>
