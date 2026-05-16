@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Driver Dashboard — Life Corridor</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -205,7 +207,14 @@ nav{padding:14px 40px;display:flex;align-items:center;justify-content:space-betw
     </div>
   </div>
 
-  <div class="dash-card" style="margin-top: 24px; border: 2px solid rgba(255,51,102,.3); background: linear-gradient(135deg, rgba(255,51,102,.05), rgba(10,15,26,.8));">
+  <div class="dash-card" style="position:relative; margin-top: 24px; border: 2px solid rgba(255,51,102,.3); background: linear-gradient(135deg, rgba(255,51,102,.05), rgba(10,15,26,.8));">
+    
+    <div id="vitalsOverlay" style="position:absolute; inset:0; background:rgba(10,15,26,0.85); backdrop-filter:blur(8px); z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:12px;">
+      <div style="font-size:32px; margin-bottom:12px; animation: bounce 2s infinite;">🏃</div>
+      <div style="font-size:18px; color:#ff3366; font-weight:800; letter-spacing:1px; text-transform:uppercase;">Waiting for Patient Boarding</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px;">Vitals Telemetry will activate once patient is secured.</div>
+    </div>
+
     <div class="dash-card-title" style="font-size: 18px; color: #ff3366; display:flex; justify-content:space-between; align-items:center;">
       <span>⚕️ ADVANCED ICU PATIENT MONITORING</span>
       <span style="font-size:12px; padding:4px 12px; background:rgba(255,51,102,0.2); border-radius:20px; color:#ff3366; animation: livePulse 1.5s infinite;">LIVE TELEMETRY</span>
@@ -266,64 +275,7 @@ nav{padding:14px 40px;display:flex;align-items:center;justify-content:space-betw
   <div class="dash-card" style="margin-top: 24px;" id="mapCard">
     <div class="dash-card-title">📍 Live Ambulance Tracking</div>
     <div class="map-container">
-      <svg class="map-svg" viewBox="0 0 900 380" id="mapSvg">
-        <rect fill="#0d1526" width="900" height="380"/>
-        <!-- Major roads horizontal -->
-        <rect y="60" width="900" height="28" fill="#1a2235"/>
-        <rect y="140" width="900" height="28" fill="#1a2235"/>
-        <rect y="220" width="900" height="28" fill="#1a2235"/>
-        <rect y="300" width="900" height="28" fill="#1a2235"/>
-        <!-- Major roads vertical -->
-        <rect x="80" width="28" height="380" fill="#1a2235"/>
-        <rect x="240" width="28" height="380" fill="#1a2235"/>
-        <rect x="400" width="28" height="380" fill="#1a2235"/>
-        <rect x="560" width="28" height="380" fill="#1a2235"/>
-        <rect x="720" width="28" height="380" fill="#1a2235"/>
-        <!-- Road markings -->
-        <line x1="0" y1="74" x2="900" y2="74" stroke="#2a3550" stroke-dasharray="20,15" stroke-width="1"/>
-        <line x1="0" y1="154" x2="900" y2="154" stroke="#2a3550" stroke-dasharray="20,15" stroke-width="1"/>
-        <line x1="0" y1="234" x2="900" y2="234" stroke="#2a3550" stroke-dasharray="20,15" stroke-width="1"/>
-        <!-- Buildings -->
-        <rect x="110" y="10" width="120" height="45" rx="4" fill="#162035"/>
-        <rect x="280" y="10" width="100" height="45" rx="4" fill="#162035"/>
-        <rect x="440" y="10" width="100" height="45" rx="4" fill="#162035"/>
-        <rect x="110" y="95" width="120" height="40" rx="4" fill="#162035"/>
-        <rect x="280" y="95" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="440" y="95" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="600" y="95" width="110" height="40" rx="4" fill="#162035"/>
-        <rect x="110" y="175" width="120" height="40" rx="4" fill="#162035"/>
-        <rect x="280" y="175" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="440" y="175" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="600" y="175" width="110" height="40" rx="4" fill="#162035"/>
-        <rect x="110" y="255" width="120" height="40" rx="4" fill="#162035"/>
-        <rect x="280" y="255" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="440" y="255" width="100" height="40" rx="4" fill="#162035"/>
-        <rect x="600" y="255" width="110" height="40" rx="4" fill="#162035"/>
-        <!-- Route highlight -->
-        <polyline id="routeLine" points="94,340 94,154 414,154 414,74 750,74" fill="none" stroke="#00c853" stroke-width="3" stroke-dasharray="8,4" opacity="0.8"/>
-        <!-- Signal dots on map -->
-        <circle cx="94" cy="154" r="6" fill="#ff4444" id="ms1"/>
-        <circle cx="254" cy="154" r="6" fill="#ff4444" id="ms2"/>
-        <circle cx="414" cy="154" r="6" fill="#ff4444" id="ms3"/>
-        <circle cx="414" cy="74" r="6" fill="#ff4444" id="ms4"/>
-        <circle cx="574" cy="74" r="6" fill="#ff4444" id="ms5"/>
-        <circle cx="734" cy="74" r="6" fill="#ff4444" id="ms6"/>
-        <!-- Hospital marker -->
-        <rect x="720" y="50" width="50" height="40" rx="6" fill="#00b4d8" opacity="0.2"/>
-        <text x="745" y="76" fill="#00b4d8" text-anchor="middle" font-size="18">🏥</text>
-        <text x="745" y="32" fill="#00b4d8" text-anchor="middle" font-size="9" font-family="Poppins,sans-serif" font-weight="600">DESTINATION</text>
-        <!-- Source -->
-        <rect x="60" y="315" width="65" height="34" rx="5" fill="rgba(0,200,83,0.15)" opacity="0.9"/>
-        <text x="92" y="335" fill="#00c853" text-anchor="middle" font-size="9" font-family="Poppins,sans-serif" font-weight="700">PICKUP</text>
-        <!-- Ambulance marker -->
-        <g id="ambGlowGroup" transform="translate(94, 340)">
-          <circle cx="0" cy="0" r="14" fill="rgba(0,200,83,0.2)">
-            <animate attributeName="r" values="14;20;14" dur="2s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
-          </circle>
-          <text x="0" y="5" font-size="16" text-anchor="middle" transform="scale(-1, 1)">🚑</text>
-        </g>
-      </svg>
+      <div id="lmap" style="width:100%; height:100%; background: #0a0f1a; border-radius: 20px; z-index: 1;"></div>
       <div class="map-overlay">
         <div class="map-info-row"><span class="map-label">Ambulance ID</span><span class="map-value">AMB-007</span></div>
         <div class="map-info-row"><span class="map-label">Speed</span><span class="map-value" id="mapSpeed">0 km/h</span></div>
@@ -367,13 +319,41 @@ function logout() {
 }
 
 let trackingInterval;
+let lmap;
+let ambMarker;
+let routeLine;
+let mapSignals = [];
+
+const hospitals = {
+  "Sagar Dutta Medical College": [22.6896, 88.3712],
+  "Barrackpore Sub-Divisional": [22.7578, 88.3688],
+  "SSKM Hospital, Kolkata": [22.5398, 88.3444],
+  "Apollo Gleneagles": [22.5714, 88.4023],
+  "Fortis Hospital": [22.5186, 88.4037]
+};
+
+const pickupCoord = [22.7303, 88.3703]; // Narula / Agarpara
+
+document.addEventListener('DOMContentLoaded', () => {
+  if(document.getElementById('lmap')) {
+    lmap = L.map('lmap', {zoomControl: false}).setView(pickupCoord, 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(lmap);
+    
+    // Add hospital markers
+    Object.keys(hospitals).forEach(name => {
+      L.circleMarker(hospitals[name], {color: '#ff3366', radius: 8, fillOpacity: 0.5}).addTo(lmap).bindPopup(name);
+    });
+  }
+});
 
 function activateCorridor() {
   document.getElementById('activeStatus').style.display = 'block';
-  document.getElementById('etaVal').textContent = '6m';
+  document.getElementById('etaVal').textContent = 'Calc...';
   document.getElementById('sigVal').textContent = '0/6';
   document.getElementById('speedVal').textContent = '65';
-  document.getElementById('distVal').textContent = '4.2 km';
+  document.getElementById('distVal').textContent = 'Calc...';
   
   // Update Signal Control View
   document.getElementById('totalSignals').textContent = '0/6';
@@ -384,14 +364,11 @@ function activateCorridor() {
   // Update map values
   document.getElementById('mapSpeed').textContent = '65 km/h';
   document.getElementById('mapSignals').textContent = '0/6';
-  document.getElementById('mapEta').textContent = '⏱ ETA: 6m';
+  document.getElementById('mapEta').textContent = '⏱ ETA: Calc...';
   document.getElementById('mapStatus').textContent = '🟢 Active';
   
-  // Keep all signals RED initially - they'll turn green as ambulance approaches
+  // Keep all signals RED initially
   for(let i=1; i<=6; i++) {
-    const sigElement = document.getElementById('ms'+i);
-    if(sigElement) sigElement.setAttribute('fill', '#ff4444');
-    
     const sigControl = document.getElementById('sig'+i);
     if(sigControl) {
       sigControl.style.background = '#ff4444';
@@ -399,9 +376,8 @@ function activateCorridor() {
     }
   }
   
-  // Update signal status text to RED
   const statusTexts = document.querySelectorAll('[id^="sig"][style*="font-weight"]');
-  statusTexts.forEach((el, idx) => {
+  statusTexts.forEach((el) => {
     const parent = el.parentElement;
     const statusDiv = parent.querySelector('div:nth-child(3)');
     if(statusDiv) {
@@ -410,119 +386,197 @@ function activateCorridor() {
     }
   });
 
-  // Animate the ambulance on the map route
   animateAmbulance();
 }
 
 function animateAmbulance() {
-  const amb = document.getElementById('ambGlowGroup');
-  const routePoints = [
-    {x: 94, y: 340},   // Start
-    {x: 94, y: 154},   // Signal 1 (94, 154)
-    {x: 414, y: 154},  // Signal 2 (254, 154) & Signal 3 (414, 154)
-    {x: 414, y: 74},   // Signal 4 (414, 74)
-    {x: 750, y: 74}    // Signal 5 (574, 74) & Signal 6 (734, 74)
-  ];
+  let destName = document.getElementById('disp-dest').textContent.trim();
+  let destCoord = hospitals[destName] || hospitals["Sagar Dutta Medical College"];
   
-  // Signal positions
-  const signals = [
-    {id: 1, x: 94, y: 154},
-    {id: 2, x: 254, y: 154},
-    {id: 3, x: 414, y: 154},
-    {id: 4, x: 414, y: 74},
-    {id: 5, x: 574, y: 74},
-    {id: 6, x: 734, y: 74}
-  ];
+  if(routeLine) lmap.removeLayer(routeLine);
+  if(ambMarker) lmap.removeLayer(ambMarker);
+  mapSignals.forEach(m => lmap.removeLayer(m.marker));
+  mapSignals = [];
   
-  const proximityThreshold = 80; // Distance to turn signal green
-  let currentSegment = 0;
-  let progress = 0;
-  const speed = 0.005;
-  let signalsCleared = 0;
-  const passedSignals = new Set();
+  // Phase 1: Hospital -> Civilian
+  document.getElementById('mapStatus').textContent = '🔵 Approaching Civilian';
+  document.getElementById('vitalsOverlay').style.display = 'flex';
   
-  if (trackingInterval) clearInterval(trackingInterval);
-  
-  trackingInterval = setInterval(() => {
-    if (currentSegment >= routePoints.length - 1) {
-      clearInterval(trackingInterval);
-      document.getElementById('etaVal').textContent = 'Arrived';
-      document.getElementById('speedVal').textContent = '0';
-      document.getElementById('mapSpeed').textContent = '0 km/h';
-      document.getElementById('mapEta').textContent = '⏱ ETA: Arrived';
-      document.getElementById('distVal').textContent = '0 km';
-      document.getElementById('mapStatus').textContent = '✅ Completed';
+  fetch(`https://router.project-osrm.org/route/v1/driving/${destCoord[1]},${destCoord[0]};${pickupCoord[1]},${pickupCoord[0]}?overview=full&geometries=geojson`)
+    .then(r => r.json())
+    .then(data => {
+      let coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
       
-      // Reset all signals to red after arrival
-      signals.forEach(signal => {
-        const mapSignal = document.getElementById('ms' + signal.id);
-        const controlSignal = document.getElementById('sig' + signal.id);
-        if(mapSignal) mapSignal.setAttribute('fill', '#ff4444');
-        if(controlSignal) {
-          controlSignal.style.background = '#ff4444';
-          controlSignal.style.boxShadow = '0 0 10px #ff4444';
-        }
-      });
-      return;
-    }
-    
-    progress += speed;
-    if (progress >= 1) {
-      progress = 0;
-      currentSegment++;
-    }
-    
-    if (currentSegment < routePoints.length - 1) {
-      const p1 = routePoints[currentSegment];
-      const p2 = routePoints[currentSegment + 1];
-      const cx = p1.x + (p2.x - p1.x) * progress;
-      const cy = p1.y + (p2.y - p1.y) * progress;
-      amb.setAttribute('transform', `translate(${cx}, ${cy})`);
-      
-      // Check proximity to each signal
-      signals.forEach(signal => {
-        const distance = Math.sqrt(Math.pow(cx - signal.x, 2) + Math.pow(cy - signal.y, 2));
-        const isNear = distance < proximityThreshold;
-        
-        const mapSignal = document.getElementById('ms' + signal.id);
-        const controlSignal = document.getElementById('sig' + signal.id);
-        const statusText = document.querySelector(`#sig${signal.id}`)?.parentElement?.querySelector('div:nth-child(3)');
-        
-        if (isNear) {
-          // Turn signal GREEN
-          if(mapSignal) mapSignal.setAttribute('fill', '#00c853');
-          if(controlSignal) {
-            controlSignal.style.background = '#00c853';
-            controlSignal.style.boxShadow = '0 0 10px #00c853';
-          }
-          if(statusText) {
-            statusText.textContent = 'GREEN';
-            statusText.style.color = 'var(--g1)';
-          }
-          
-          if (!passedSignals.has(signal.id)) {
-            passedSignals.add(signal.id);
-            signalsCleared++;
-            const clearedText = `${signalsCleared}/6`;
-            if(document.getElementById('sigVal')) document.getElementById('sigVal').textContent = clearedText;
-            if(document.getElementById('totalSignals')) document.getElementById('totalSignals').textContent = clearedText;
-            if(document.getElementById('mapSignals')) document.getElementById('mapSignals').textContent = clearedText;
+      const smoothCoords = [coords[0]];
+      for(let i=0; i<coords.length-1; i++) {
+        const p1 = coords[i];
+        const p2 = coords[i+1];
+        const dist = lmap.distance(p1, p2);
+        if(dist > 30) {
+          const segments = Math.ceil(dist / 30);
+          for(let j=1; j<=segments; j++) {
+            smoothCoords.push([
+              p1[0] + (p2[0] - p1[0]) * (j/segments),
+              p1[1] + (p2[1] - p1[1]) * (j/segments)
+            ]);
           }
         } else {
-          // Turn signal RED
-          if(mapSignal) mapSignal.setAttribute('fill', '#ff4444');
-          if(controlSignal) {
-            controlSignal.style.background = '#ff4444';
-            controlSignal.style.boxShadow = '0 0 10px #ff4444';
-          }
-          if(statusText) {
-            statusText.textContent = 'RED';
-            statusText.style.color = '#ff4444';
-          }
+          smoothCoords.push(p2);
         }
-      });
-    }
-  }, 50);
+      }
+      coords = smoothCoords;
+      
+      const durationMin = Math.ceil(data.routes[0].duration / 60);
+      document.getElementById('etaVal').textContent = durationMin + 'm';
+      document.getElementById('mapEta').textContent = '⏱ ETA: ' + durationMin + 'm';
+      
+      routeLine = L.polyline(coords, {color: '#00e5ff', weight: 6, opacity: 0.6, dashArray: '10, 10'}).addTo(lmap);
+      lmap.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+      
+      const ambIcon = L.divIcon({className: 'custom-amb', html: '<div style="font-size:24px; filter: drop-shadow(0 0 10px #00e5ff);">🚑</div>', iconSize: [30, 30]});
+      ambMarker = L.marker(coords[0], {icon: ambIcon, zIndexOffset: 1000}).addTo(lmap);
+      
+      let progress = 0;
+      if (trackingInterval) clearInterval(trackingInterval);
+      
+      trackingInterval = setInterval(() => {
+        if(progress >= coords.length - 1) {
+          clearInterval(trackingInterval);
+          
+          // Phase 1 Complete
+          document.getElementById('mapStatus').textContent = '🧍 Patient Boarding...';
+          document.getElementById('mapSpeed').textContent = '0 km/h';
+          
+          setTimeout(() => {
+            // Patient boarded! Hide overlay, start Phase 2
+            document.getElementById('vitalsOverlay').style.display = 'none';
+            document.getElementById('mapStatus').textContent = '🟢 Green Corridor Active';
+            
+            // Notify Admin Dashboard
+            localStorage.setItem('patient_boarded_alert', JSON.stringify({
+              timestamp: Date.now(),
+              hospital: destName,
+              patientData: {
+                condition: 'Level 2 Trauma (Severe)',
+                vitals: { spo2: '98%', bp: '120/80', resp: 18, hr: 88 },
+                history: 'No known allergies. Previous hypertension.'
+              }
+            }));
+
+            startPhase2(destCoord);
+          }, 3000);
+          
+          return;
+        }
+        
+        progress += 0.5; if(progress >= coords.length) progress = coords.length - 1; 
+        ambMarker.setLatLng(coords[Math.floor(progress)]);
+        document.getElementById('mapSpeed').textContent = Math.floor(65 + Math.random() * 5) + ' km/h';
+      }, 30);
+    })
+    .catch(err => console.error("OSRM Error Phase 1:", err));
+}
+
+function startPhase2(destCoord) {
+  if(routeLine) lmap.removeLayer(routeLine);
+  
+  // Fetch real OSRM Route: Civilian -> Hospital
+  fetch(`https://router.project-osrm.org/route/v1/driving/${pickupCoord[1]},${pickupCoord[0]};${destCoord[1]},${destCoord[0]}?overview=full&geometries=geojson`)
+    .then(r => r.json())
+    .then(data => {
+      let coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+      
+      const smoothCoords = [coords[0]];
+      for(let i=0; i<coords.length-1; i++) {
+        const p1 = coords[i];
+        const p2 = coords[i+1];
+        const dist = lmap.distance(p1, p2);
+        if(dist > 30) {
+          const segments = Math.ceil(dist / 30);
+          for(let j=1; j<=segments; j++) {
+            smoothCoords.push([
+              p1[0] + (p2[0] - p1[0]) * (j/segments),
+              p1[1] + (p2[1] - p1[1]) * (j/segments)
+            ]);
+          }
+        } else {
+          smoothCoords.push(p2);
+        }
+      }
+      coords = smoothCoords;
+      
+      const distKm = (data.routes[0].distance / 1000).toFixed(1);
+      const durationMin = Math.ceil(data.routes[0].duration / 60);
+      
+      document.getElementById('etaVal').textContent = durationMin + 'm';
+      document.getElementById('mapEta').textContent = '⏱ ETA: ' + durationMin + 'm';
+      document.getElementById('distVal').textContent = distKm + ' km';
+      
+      routeLine = L.polyline(coords, {color: '#00ff66', weight: 6, opacity: 0.8}).addTo(lmap);
+      lmap.fitBounds(routeLine.getBounds(), {padding: [50, 50]});
+      
+      const stepSize = Math.floor(coords.length / 7);
+      for(let i=1; i<=6; i++) {
+        let sc = coords[i * stepSize];
+        if(sc) {
+          let sm = L.circleMarker(sc, {color: '#ff4444', radius: 6, fillOpacity: 1, zIndexOffset: 500}).addTo(lmap);
+          mapSignals.push({marker: sm, id: i, passed: false, coord: sc});
+        }
+      }
+      
+      const ambIcon = L.divIcon({className: 'custom-amb', html: '<div style="font-size:24px; filter: drop-shadow(0 0 10px #00c853);">🚑</div>', iconSize: [30, 30]});
+      ambMarker.setIcon(ambIcon);
+      
+      let progress = 0;
+      if (trackingInterval) clearInterval(trackingInterval);
+      
+      trackingInterval = setInterval(() => {
+        if(progress >= coords.length - 1) {
+          clearInterval(trackingInterval);
+          document.getElementById('etaVal').textContent = 'Arrived';
+          document.getElementById('speedVal').textContent = '0';
+          document.getElementById('mapSpeed').textContent = '0 km/h';
+          document.getElementById('mapEta').textContent = '⏱ ETA: Arrived';
+          document.getElementById('distVal').textContent = '0 km';
+          document.getElementById('mapStatus').textContent = '✅ Completed';
+          return;
+        }
+        
+        progress += 0.5; if(progress >= coords.length) progress = coords.length - 1; let currentPos = coords[Math.floor(progress)];
+        ambMarker.setLatLng(currentPos);
+        document.getElementById('speedVal').textContent = Math.floor(65 + Math.random() * 10);
+        document.getElementById('mapSpeed').textContent = document.getElementById('speedVal').textContent + ' km/h';
+        
+        let signalsCleared = 0;
+        mapSignals.forEach(sig => {
+          const distance = lmap.distance(currentPos, sig.coord);
+          if (distance < 800) {
+            // Ambulance is NEAR this signal — turn GREEN
+            sig.marker.setStyle({color: '#00c853'});
+            sig.isGreen = true;
+            if(!sig.passed) sig.passed = true;
+            const controlSignal = document.getElementById('sig' + sig.id);
+            const statusText = document.querySelector(`#sig${sig.id}`)?.parentElement?.querySelector('div:nth-child(3)');
+            if(controlSignal) { controlSignal.style.background = '#00c853'; controlSignal.style.boxShadow = '0 0 10px #00c853'; }
+            if(statusText) { statusText.textContent = 'GREEN'; statusText.style.color = 'var(--g1)'; }
+          } else if (sig.isGreen) {
+            // Ambulance has LEFT this signal — turn back to RED
+            sig.marker.setStyle({color: '#ff4444'});
+            sig.isGreen = false;
+            const controlSignal = document.getElementById('sig' + sig.id);
+            const statusText = document.querySelector(`#sig${sig.id}`)?.parentElement?.querySelector('div:nth-child(3)');
+            if(controlSignal) { controlSignal.style.background = '#ff4444'; controlSignal.style.boxShadow = '0 0 10px #ff4444'; }
+            if(statusText) { statusText.textContent = 'RED'; statusText.style.color = '#ff4444'; }
+          }
+          if(sig.passed) signalsCleared++;
+        });
+        const clearedText = `${signalsCleared}/${mapSignals.length}`;
+        document.getElementById('sigVal').textContent = clearedText;
+        document.getElementById('totalSignals').textContent = clearedText;
+        document.getElementById('mapSignals').textContent = `${signalsCleared}/6`;
+      }, 30);
+    })
+    .catch(err => console.error("OSRM Error Phase 2:", err));
 }
 
 // ===== LISTEN FOR SIGNAL OVERRIDE FROM ADMIN =====
@@ -536,22 +590,11 @@ window.addEventListener('storage', function(e) {
 });
 
 function overrideAllSignalsGreen() {
-  // Turn all signals GREEN on driver view
-  const signals = [
-    {id: 1, x: 94, y: 154},
-    {id: 2, x: 254, y: 154},
-    {id: 3, x: 414, y: 154},
-    {id: 4, x: 414, y: 74},
-    {id: 5, x: 574, y: 74},
-    {id: 6, x: 734, y: 74}
-  ];
-  
-  signals.forEach(signal => {
-    const mapSignal = document.getElementById('ms' + signal.id);
-    const controlSignal = document.getElementById('sig' + signal.id);
-    const statusText = document.querySelector(`#sig${signal.id}`)?.parentElement?.querySelector('div:nth-child(3)');
+  mapSignals.forEach(sig => {
+    sig.marker.setStyle({color: '#00c853'});
+    const controlSignal = document.getElementById('sig' + sig.id);
+    const statusText = document.querySelector(`#sig${sig.id}`)?.parentElement?.querySelector('div:nth-child(3)');
     
-    if(mapSignal) mapSignal.setAttribute('fill', '#00c853');
     if(controlSignal) {
       controlSignal.style.background = '#00c853';
       controlSignal.style.boxShadow = '0 0 10px #00c853';
@@ -560,21 +603,19 @@ function overrideAllSignalsGreen() {
       statusText.textContent = 'GREEN';
       statusText.style.color = 'var(--g1)';
     }
+    sig.passed = true;
   });
   
-  // Update corridor status to show override active
   document.getElementById('corridorStatus').textContent = 'OVERRIDE ACTIVE';
   document.getElementById('corridorStatus').style.color = 'var(--g1)';
   document.getElementById('greenStatus').textContent = '🟢';
 }
 
-// Check if override was set when page loads
 (function() {
   const override = JSON.parse(localStorage.getItem('lc_signal_override') || 'null');
   if(override && override.active) {
-    // Check if it's recent (within last 60 seconds)
     if(Date.now() - override.timestamp < 60000) {
-      overrideAllSignalsGreen();
+      setTimeout(overrideAllSignalsGreen, 1000);
     }
   }
 })();</script>
@@ -653,7 +694,13 @@ function overrideAllSignalsGreen() {
 
       <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px;">
         <div style="font-size:11px; color:var(--muted); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">DESTINATION HOSPITAL</div>
-        <div style="font-size:16px; font-weight:700; color:#00e5ff;" id="disp-dest">--</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:16px; font-weight:700; color:#00e5ff;" id="disp-dest">--</div>
+          <div style="font-size:11px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(0,229,255,0.3); color:#00e5ff;" id="disp-hosptype">--</div>
+        </div>
+        <div style="margin-top: 8px; font-size:12px; color:var(--g1); font-weight:600; display:none;" id="disp-beds-container">
+          🛏️ Live Beds: <span id="disp-beds">--</span>
+        </div>
       </div>
     </div>
 
@@ -679,6 +726,16 @@ function overrideAllSignalsGreen() {
         document.getElementById('disp-dest').textContent = req.destination;
         document.getElementById('disp-type').textContent = req.type;
         document.getElementById('disp-sev').textContent = req.severity;
+        
+        // New Dual Flow Fields
+        document.getElementById('disp-hosptype').textContent = req.hospitalType || 'Unknown';
+        if (req.bedAvailability && req.bedAvailability !== 'Pending/Unknown') {
+          document.getElementById('disp-beds-container').style.display = 'block';
+          document.getElementById('disp-beds').textContent = req.bedAvailability;
+        } else {
+          document.getElementById('disp-beds-container').style.display = 'none';
+        }
+
         document.getElementById('dispatchOverlay').style.display = 'flex';
       } else {
         document.getElementById('dispatchOverlay').style.display = 'none';
@@ -711,8 +768,11 @@ function overrideAllSignalsGreen() {
       let ecgY = 75;
       let ecgFrame = 0;
       let currentBPM = 88;
+      let currentBP_sys = 120;
+      let currentBP_dia = 80;
+      let currentResp = 18;
       let patientState = 'Stable';
-      let eMode = false; // we can read emergencyMode from driver.js
+      let eMode = false;
 
       // AI Vital Simulator
       setInterval(() => {
@@ -721,45 +781,72 @@ function overrideAllSignalsGreen() {
         } catch(e){}
 
         if (eMode) {
-          // Condition worsens occasionally if emergency active
-          if (Math.random() > 0.6) currentBPM += Math.floor(Math.random() * 5);
-          if (Math.random() > 0.8) currentBPM -= Math.floor(Math.random() * 3);
-          if (currentBPM > 140) patientState = 'Critical';
-          else if (currentBPM > 110) patientState = 'High Risk';
-          else patientState = 'Stable';
+          // Condition worsens slightly if emergency active
+          if (Math.random() > 0.6) currentBPM += Math.floor(Math.random() * 3);
+          if (Math.random() > 0.8) currentBPM -= Math.floor(Math.random() * 2);
+          
+          // CAP BPM to realistic emergency levels (max 180)
+          if (currentBPM > 180) currentBPM = 175 + Math.floor(Math.random() * 5);
+          if (currentBPM < 40) currentBPM = 45 + Math.floor(Math.random() * 5);
+
+          if (currentBPM > 140) {
+            patientState = 'Critical';
+            currentBP_sys = Math.floor(85 + Math.random() * 15);
+            currentBP_dia = Math.floor(55 + Math.random() * 10);
+            currentResp = Math.floor(24 + Math.random() * 6);
+          } else if (currentBPM > 110) {
+            patientState = 'High Risk';
+            currentBP_sys = Math.floor(100 + Math.random() * 20);
+            currentBP_dia = Math.floor(70 + Math.random() * 10);
+            currentResp = Math.floor(20 + Math.random() * 4);
+          } else {
+            patientState = 'Stable';
+            currentBP_sys = Math.floor(115 + Math.random() * 10);
+            currentBP_dia = Math.floor(75 + Math.random() * 10);
+            currentResp = Math.floor(16 + Math.random() * 4);
+          }
         } else {
-          // Stabilize
-          if (currentBPM > 80) currentBPM -= 2;
-          if (currentBPM < 70) currentBPM += 2;
+          // Stabilize towards normal levels
+          if (currentBPM > 85) currentBPM -= 1;
+          if (currentBPM < 75) currentBPM += 1;
+          currentBP_sys = 120 + Math.floor(Math.random() * 5);
+          currentBP_dia = 80 + Math.floor(Math.random() * 5);
+          currentResp = 16 + Math.floor(Math.random() * 2);
           patientState = 'Stable';
         }
 
-        document.getElementById('ecg-bpm').textContent = currentBPM;
+        document.getElementById('ecg-bpm').textContent = Math.floor(currentBPM);
         document.getElementById('ecg-bpm').style.color = currentBPM > 120 ? '#ff3366' : '#00ff66';
+
+        const bpStr = currentBP_sys + '/' + currentBP_dia;
+        document.getElementById('med-bp').textContent = bpStr;
+        document.getElementById('med-bp').style.color = currentBP_sys < 95 ? '#ff3366' : '#ffaa00';
+
+        document.getElementById('med-resp').textContent = currentResp;
+        document.getElementById('med-temp').textContent = (36.8 + Math.random() * 0.8).toFixed(1) + '°C';
 
         // Simulate SpO2 dropping if critical
         if (patientState === 'Critical') {
           document.getElementById('med-spo2').textContent = Math.floor(88 + Math.random() * 4) + '%';
           document.getElementById('med-spo2').style.color = '#ff3366';
-          document.getElementById('med-bp').textContent = '90/60';
-          document.getElementById('med-bp').style.color = '#ff3366';
           document.getElementById('med-cons').textContent = 'Unconscious';
           document.getElementById('med-cons').style.color = '#ff3366';
         } else {
           document.getElementById('med-spo2').textContent = Math.floor(96 + Math.random() * 4) + '%';
           document.getElementById('med-spo2').style.color = '#00e5ff';
-          document.getElementById('med-bp').textContent = '120/80';
-          document.getElementById('med-bp').style.color = '#ffaa00';
           document.getElementById('med-cons').textContent = 'Semi-Conscious';
           document.getElementById('med-cons').style.color = '#00ff66';
         }
 
         // Sync data to localStorage for Hospital View
         localStorage.setItem('medical_vitals', JSON.stringify({
-          bpm: currentBPM,
+          bpm: Math.floor(currentBPM),
           state: patientState,
           spo2: document.getElementById('med-spo2').textContent,
-          bp: document.getElementById('med-bp').textContent,
+          bp: bpStr,
+          resp: currentResp,
+          temp: document.getElementById('med-temp').textContent,
+          pulse: Math.floor(currentBPM),
           eta: document.getElementById('etaVal') ? document.getElementById('etaVal').textContent : '6 mins'
         }));
 

@@ -314,6 +314,15 @@ body.light-mode .form-input,body.light-mode .form-select{color:var(--text)}
       <span class="grad-text">Life Corridor</span><br>Saving Lives Through<br>Smart Mobility
     </h1>
     <p class="hero-sub">Kolkata's first AI-powered Smart Green Corridor system. Real-time ambulance routing with intelligent traffic signal control across Agarpara, Barrackpore, Salt Lake, Jadavpur & beyond — because every second counts.</p>
+    <div style="margin-bottom:32px; display:flex; align-items:center; justify-content:center; gap:14px;">
+      <span style="font-size:28px; animation:heartbeat 1.4s ease-in-out infinite;">❤️</span>
+      <span style="font-size:clamp(20px,3vw,32px); font-weight:800; font-style:italic; letter-spacing:2px; background:linear-gradient(135deg, #fff, #00c853, #00e5ff, #00c853); background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:taglineGlow 4s linear infinite;">One second faster, One life forever</span>
+      <span style="font-size:28px; animation:heartbeat 1.4s ease-in-out infinite; animation-delay:0.7s;">❤️</span>
+    </div>
+    <style>
+      @keyframes heartbeat{0%,100%{transform:scale(1)}14%{transform:scale(1.3)}28%{transform:scale(1)}42%{transform:scale(1.3)}56%{transform:scale(1)}}
+      @keyframes taglineGlow{0%{background-position:0% center}100%{background-position:300% center}}
+    </style>
     <div class="hero-btns">
       <button class="btn-lg btn-primary" onclick="goToSignUp()">Sign Up Now</button>
       <button class="btn-lg btn-ghost" onclick="goToSignIn()">Sign In</button>
@@ -789,8 +798,8 @@ body.light-mode .form-input,body.light-mode .form-select{color:var(--text)}
   <div class="footer-bottom">
     <div class="footer-copy">© 2026 Life Corridor. Built with ❤️ at Narula Institute of Technology, Kolkata. All rights reserved.</div>
     <div class="footer-links">
-      <a>Privacy Policy</a>
-      <a>Terms of Service</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms-of-service.html">Terms of Service</a>
       <a>API Docs</a>
       <a>GitHub</a>
     </div>
@@ -892,7 +901,7 @@ function startCorridor(){
   const road=document.getElementById('road');
   const roadW=road.offsetWidth||700;
   const TOTAL_DIST=4800; // metres Agarpara to Barrackpore ~4.8km
-  const speed=2.5; // pixels per tick
+  const speed=0.3; // pixels per tick (Fast)
   const TICK=30; // ms
 
   corridorInterval=setInterval(()=>{

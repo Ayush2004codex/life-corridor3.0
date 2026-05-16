@@ -16,22 +16,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!name.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (!password) {
-      setError('Please create a password.');
-      return;
-    }
-    if (!role) {
-      setError('Please select your role — Admin or Driver.');
-      return;
-    }
+    if (!name.trim()) { setError('Please enter your full name.'); return; }
+    if (!email.trim()) { setError('Please enter your email address.'); return; }
+    if (!password) { setError('Please create a password.'); return; }
+    if (!role) { setError('Please select your role — Admin or Driver.'); return; }
 
     setLoading(true);
     const result = await register(name, email, password, role);
