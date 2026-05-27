@@ -65,6 +65,8 @@ const emergencySchema = new mongoose.Schema(
     duration: Number,
     eta: Date,
     notes: String,
+    symptoms: String,
+    requiredEquipment: [String],
   },
   { timestamps: true }
 );

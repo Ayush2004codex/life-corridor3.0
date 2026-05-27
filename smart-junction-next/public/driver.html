@@ -107,6 +107,24 @@ nav{padding:14px 40px;display:flex;align-items:center;justify-content:space-betw
       </div>
 
       <button class="btn-green" onclick="activateCorridor()">Activate Green Corridor</button>
+      <button class="btn-outline" id="btnConfirmArrival" onclick="confirmArrival()" style="display:none; width: 100%; border-color: #00c853; color: #00c853; margin-top: 12px; font-weight: 700; background: rgba(0,200,83,0.1); padding: 14px; border-radius: 10px; font-size: 15px; box-shadow: 0 0 15px rgba(0,200,83,0.2);">✅ CONFIRM ARRIVAL (SEND SMS)</button>
+      <button class="btn-outline" id="btnReroute" onclick="simulateBottleneck()" style="width: 100%; border-color: var(--warn); color: var(--warn); margin-top: 12px; font-weight: 700; background: transparent; padding: 14px; border-radius: 10px; font-size: 15px;">⚠️ SIMULATE BOTTLENECK (AI REROUTE)</button>
+      <!-- AI Triage UI -->
+      <div class="form-group" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+        <label class="form-label" style="color: var(--g2);">🤖 AI Patient Triage</label>
+        <textarea id="patientSymptoms" class="form-input" style="height: 80px; resize: none; margin-bottom: 8px;" placeholder="Enter patient symptoms (e.g. Severe chest pain, sweating)"></textarea>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom: 8px;">
+          <input id="vitalsHR" class="form-input" style="padding:10px" placeholder="HR (bpm)" />
+          <input id="vitalsBP" class="form-input" style="padding:10px" placeholder="BP (mmHg)" />
+          <input id="vitalsSpO2" class="form-input" style="padding:10px" placeholder="SpO2 (%)" />
+        </div>
+        <button class="btn-outline" onclick="runAITriage()" id="btnTriage" style="width: 100%; border-color: var(--g2); color: var(--g2);">Run AI Triage</button>
+        <div id="triageResultBox" style="display:none; margin-top: 12px; padding: 12px; background: rgba(0,200,83,.08); border: 1px solid rgba(0,200,83,.3); border-radius: 8px;">
+          <div style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Severity: <span id="triageSeverity" style="font-weight: bold; color: var(--g1);">HIGH</span></div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Req. Equipment: <span id="triageEquip" style="color: #fff;">Defibrillator</span></div>
+          <div style="font-size: 11px; color: #ff4444; margin-top: 4px; font-weight:bold; display:none;" id="triagePrepBox">Hospital Action: <span id="triagePrep"></span></div>
+        </div>
+      </div>
       <button class="btn-outline" id="sosBtn" onclick="toggleSOS()" style="width: 100%; border-color: #ff4444; color: #ff4444; margin-top: 12px; font-weight: 700; background: transparent; padding: 14px; border-radius: 10px; font-size: 15px;">🚨 ACTIVATE GLOBAL SOS</button>
       <button class="btn-outline" onclick="window.open('/simulation', '_blank')" style="width: 100%; border-color: var(--g2); color: var(--g2); margin-top: 12px; font-weight: 700; background: rgba(0, 229, 255, 0.1); padding: 14px; border-radius: 10px; font-size: 15px; box-shadow: 0 0 15px rgba(0,229,255,0.4);">🌐 OPEN 3D SMART CITY SIMULATION</button>
 
@@ -539,6 +557,7 @@ function startPhase2(destCoord) {
           document.getElementById('mapEta').textContent = '⏱ ETA: Arrived';
           document.getElementById('distVal').textContent = '0 km';
           document.getElementById('mapStatus').textContent = '✅ Completed';
+          document.getElementById('btnConfirmArrival').style.display = 'block';
           return;
         }
         
@@ -903,6 +922,136 @@ function overrideAllSignalsGreen() {
       
       drawECG();
     }
+
+    // --- Confirm Arrival SMS Trigger ---
+    function confirmArrival() {
+      const btn = document.getElementById('btnConfirmArrival');
+      btn.innerHTML = 'Sending SMS...';
+      
+      let destName = "Sagar Dutta Medical College";
+      const dispDest = document.getElementById('disp-dest');
+      if (dispDest && dispDest.textContent.trim() !== '--' && dispDest.textContent.trim() !== '') {
+        destName = dispDest.textContent.trim();
+      } else {
+        const destSelect = document.getElementById('destSelect');
+        if (destSelect) {
+          destName = destSelect.options[destSelect.selectedIndex].text;
+        }
+      }
+
+      const payload = JSON.stringify({
+        hospital: destName,
+        status: 'arrived'
+      });
+
+      if (!navigator.onLine) {
+         localStorage.setItem('queued_arrival', payload);
+         btn.innerHTML = '⚠️ Offline - Will Sync Later';
+         btn.style.background = '#ffaa00';
+         btn.style.color = '#000';
+         alert('You are offline. The arrival confirmation will be sent automatically when you regain connection.');
+      } else {
+         sendArrivalPayload(payload, btn);
+      }
+    }
+
+    function sendArrivalPayload(payload, btn) {
+      fetch('http://localhost:5000/api/emergencies/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload
+      }).then(() => {
+        if(btn) {
+          btn.innerHTML = '✅ SMS Sent Successfully';
+          btn.style.background = '#00c853';
+          btn.style.color = '#fff';
+        }
+        alert('Arrival confirmed! The family has been notified via SMS/WhatsApp.');
+      }).catch(err => {
+        console.error('Failed to send arrival SMS', err);
+        if(btn) btn.innerHTML = '❌ SMS Failed';
+      });
+    }
+
+    window.addEventListener('online', () => {
+      const queued = localStorage.getItem('queued_arrival');
+      if (queued) {
+        console.log("Network restored, syncing queued arrival...");
+        const btn = document.getElementById('btnConfirmArrival');
+        sendArrivalPayload(queued, btn);
+        localStorage.removeItem('queued_arrival');
+      }
+    });
+
+    // --- AI Triage ---
+    function runAITriage() {
+      const symptoms = document.getElementById('patientSymptoms').value;
+      let vitals = "";
+      if(document.getElementById('vitalsHR').value) vitals += `HR:${document.getElementById('vitalsHR').value} `;
+      if(document.getElementById('vitalsBP').value) vitals += `BP:${document.getElementById('vitalsBP').value} `;
+      if(document.getElementById('vitalsSpO2').value) vitals += `SpO2:${document.getElementById('vitalsSpO2').value} `;
+      
+      const btn = document.getElementById('btnTriage');
+      btn.innerHTML = 'Running Triage...';
+      
+      fetch('http://localhost:5000/api/emergencies/triage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ symptoms, vitals })
+      }).then(r=>r.json()).then(resp => {
+        const data = resp.data || resp;
+        btn.innerHTML = 'Triage Complete';
+        document.getElementById('triageResultBox').style.display = 'block';
+        document.getElementById('triageSeverity').textContent = data.severity;
+        if(data.severity && data.severity.includes('Red')) document.getElementById('triageSeverity').style.color = '#ff4444';
+        if(data.severity && data.severity.includes('Yellow')) document.getElementById('triageSeverity').style.color = '#ffaa00';
+        document.getElementById('triageEquip').textContent = data.requiredEquipment ? data.requiredEquipment.join(', ') : 'Standard Life Support';
+        
+        if(data.hospitalPrep) {
+          document.getElementById('triagePrepBox').style.display = 'block';
+          document.getElementById('triagePrep').textContent = data.hospitalPrep;
+        }
+      }).catch(e => {
+        btn.innerHTML = 'Triage Failed';
+        console.error(e);
+      });
+    }
+
+    // --- Simulate Bottleneck / Reroute ---
+    function simulateBottleneck() {
+      const btn = document.getElementById('btnReroute');
+      btn.innerHTML = 'Calculating Reroute...';
+      
+      let destName = document.getElementById('disp-dest').textContent.trim();
+      if (destName === '--') destName = "Sagar Dutta Medical College";
+      let destCoord = hospitals[destName] || hospitals["Sagar Dutta Medical College"];
+      
+      fetch('http://localhost:5000/api/routes/recalculate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer test'},
+        body: JSON.stringify({
+          currentLocation: typeof currentPos !== 'undefined' ? currentPos : [22.7303, 88.3703],
+          destination: destCoord,
+          bottleneck: typeof currentPos !== 'undefined' ? currentPos : [22.7303, 88.3703]
+        })
+      }).then(r=>r.json()).then(data => {
+        btn.innerHTML = 'Route Adjusted ✅';
+        document.getElementById('activeStatus').querySelector('.status-desc').innerHTML = `<strong>⚠️ Route Recalculated:</strong> ${data.reason}`;
+        
+        // Render the new route line
+        if(routeLine) lmap.removeLayer(routeLine);
+        const newCoords = data.newRoute.map(c => [c[1], c[0]]);
+        routeLine = L.polyline(newCoords, {color: '#ffaa00', weight: 6, opacity: 0.8, dashArray: '10, 10'}).addTo(lmap);
+        
+        setTimeout(() => { btn.innerHTML = '⚠️ SIMULATE BOTTLENECK (AI REROUTE)'; }, 3000);
+      }).catch(e => {
+        btn.innerHTML = 'Reroute Failed';
+        console.error(e);
+      });
+    }
+
 </script>
 </body>
 </html>

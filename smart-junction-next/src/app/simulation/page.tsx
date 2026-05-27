@@ -227,6 +227,16 @@ export default function SmartJunctionDashboard({ isBackground = false }: { isBac
   const [emergency, setEmergency] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [logs, setLogs] = useState<string[]>(['[SYSTEM] Smart Grid initialized.']);
+  const [isWidget, setIsWidget] = useState(isBackground);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('widget') === 'true') {
+        setIsWidget(true);
+      }
+    }
+  }, []);
 
   const triggerCorridor = () => {
     setEmergency(true);
@@ -245,8 +255,24 @@ export default function SmartJunctionDashboard({ isBackground = false }: { isBac
     }, 12000);
   };
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data === 'TRIGGER_CORRIDOR') {
+        // Only trigger if not already active
+        setEmergency((prev) => {
+          if (!prev) {
+            triggerCorridor();
+          }
+          return prev;
+        });
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   return (
-    <div className={`w-screen h-screen ${isBackground ? 'bg-transparent' : 'bg-[#020617]'} text-slate-200 overflow-hidden relative font-sans`}>
+    <div className={`w-screen h-screen ${isWidget ? 'bg-transparent' : 'bg-[#020617]'} text-slate-200 overflow-hidden relative font-sans`}>
       
       {/* 3D CANVAS */}
       <div className="absolute inset-0 z-0">
@@ -259,13 +285,13 @@ export default function SmartJunctionDashboard({ isBackground = false }: { isBac
       </div>
 
       {/* DASHBOARD UI OVERLAY */}
-      {!isBackground && (
+      {!isWidget && (
         <div className="absolute inset-0 z-10 pointer-events-none p-6 flex flex-col justify-between">
         
         {/* TOP BAR */}
         <header className="flex justify-between items-start pointer-events-auto">
           <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-5 rounded-2xl shadow-2xl flex items-center gap-4">
-            <a href="/driver.html" className="mr-2 p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Back to Driver Dashboard">
+            <a href="/driver" className="mr-2 p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Back to Driver Dashboard">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-white"><path d="m15 18-6-6 6-6"/></svg>
             </a>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${emergency ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-emerald-500/20 text-emerald-500'}`}>

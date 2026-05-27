@@ -24,7 +24,8 @@ export default function CivilianBookingPage() {
     bedAvailability: ''
   });
 
-  const requestLocationPermission = (action: string) => {
+  const requestLocationPermission = (e: React.MouseEvent, action: string) => {
+    e.preventDefault();
     if (locationGranted) {
       if (action === 'sos') requestCriticalSOS();
       else if (action === 'manual') setStep(1);
@@ -106,6 +107,17 @@ export default function CivilianBookingPage() {
         timestamp: Date.now()
       }));
       localStorage.setItem('dispatch_accepted', 'false');
+      
+      // Trigger Dispatch Twilio Alerts
+      fetch('http://localhost:5000/api/emergencies/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospital: sosBooking.destination,
+          eta: 'Calculating...',
+          trackLink: 'http://localhost:3000/booking'
+        })
+      }).catch(err => console.error('Alerts failed:', err));
     }, 2000);
   };
 
@@ -128,6 +140,17 @@ export default function CivilianBookingPage() {
         timestamp: Date.now()
       }));
       localStorage.setItem('dispatch_accepted', 'false');
+      
+      // Trigger Dispatch Twilio Alerts
+      fetch('http://localhost:5000/api/emergencies/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          hospital: finalBooking.destination,
+          eta: 'Calculating...',
+          trackLink: 'http://localhost:3000/booking'
+        })
+      }).catch(err => console.error('Alerts failed:', err));
     }, 2000);
   };
 
@@ -153,7 +176,7 @@ export default function CivilianBookingPage() {
               <p className="text-[10px] text-slate-400 font-bold tracking-widest">CIVILIAN NETWORK</p>
             </div>
           </div>
-          <button onClick={() => router.push('/auth')} className="text-xs border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors font-medium">Log Out</button>
+          <button type="button" onClick={() => router.push('/auth')} className="text-xs border border-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors font-medium">Log Out</button>
         </header>
 
         <AnimatePresence mode="wait">
@@ -171,8 +194,8 @@ export default function CivilianBookingPage() {
               </div>
 
               {/* Path A: Critical SOS */}
-              <button 
-                onClick={() => requestLocationPermission('sos')}
+              <button type="button" 
+                onClick={(e) => requestLocationPermission(e, 'sos')}
                 className="group relative overflow-hidden bg-red-950/40 border-2 border-red-500/50 p-6 rounded-3xl text-left hover:bg-red-900/50 transition-all hover:border-red-500 hover:shadow-[0_0_40px_rgba(239,68,68,0.3)]"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl group-hover:bg-red-500/20 transition-all"></div>
@@ -193,8 +216,8 @@ export default function CivilianBookingPage() {
               </button>
 
               {/* Path B: Manual Transport */}
-              <button 
-                onClick={() => requestLocationPermission('manual')}
+              <button type="button" 
+                onClick={(e) => requestLocationPermission(e, 'manual')}
                 className="group relative overflow-hidden bg-slate-900/60 border border-slate-700 p-6 rounded-3xl text-left hover:bg-slate-800 transition-all hover:border-cyan-500/50"
               >
                 <div className="flex items-start gap-4 relative z-10">
@@ -223,7 +246,7 @@ export default function CivilianBookingPage() {
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
               className="flex-1 flex flex-col gap-5 pb-20"
             >
-              <button onClick={() => setStep(0)} className="text-xs text-slate-400 hover:text-white flex items-center gap-1 mb-2 w-fit">
+              <button type="button" onClick={() => setStep(0)} className="text-xs text-slate-400 hover:text-white flex items-center gap-1 mb-2 w-fit">
                 ← Back to Emergency Selection
               </button>
 
@@ -299,7 +322,7 @@ export default function CivilianBookingPage() {
                 </div>
               </div>
 
-              <button onClick={requestManualAmbulance} className="w-full mt-auto mb-8 bg-cyan-600 text-white font-black tracking-widest py-5 rounded-2xl hover:bg-cyan-500 hover:shadow-[0_0_40px_rgba(8,145,178,0.5)] transition-all flex items-center justify-center gap-3 text-lg">
+              <button type="button" onClick={requestManualAmbulance} className="w-full mt-auto mb-8 bg-cyan-600 text-white font-black tracking-widest py-5 rounded-2xl hover:bg-cyan-500 hover:shadow-[0_0_40px_rgba(8,145,178,0.5)] transition-all flex items-center justify-center gap-3 text-lg">
                 <Navigation size={24} />
                 DISPATCH MANUAL TRANSPORT
               </button>
@@ -405,7 +428,7 @@ export default function CivilianBookingPage() {
               </div>
               
               {status === 'en_route' && (
-                <button onClick={() => window.open('/simulation', '_blank')} className="w-full mt-auto mb-8 bg-slate-800 border border-cyan-500/50 text-cyan-400 font-bold tracking-widest py-4 rounded-2xl hover:bg-slate-700 transition-all text-sm">
+                <button type="button" onClick={() => window.open('/simulation', '_blank')} className="w-full mt-auto mb-8 bg-slate-800 border border-cyan-500/50 text-cyan-400 font-bold tracking-widest py-4 rounded-2xl hover:bg-slate-700 transition-all text-sm">
                   🌐 OPEN 3D CORRIDOR TRACKING
                 </button>
               )}
@@ -448,13 +471,13 @@ export default function CivilianBookingPage() {
                   <span className="text-xs text-slate-300"><strong className="text-white">Privacy Safe</strong> — Used only for this emergency</span>
                 </div>
               </div>
-              <button
+              <button type="button"
                 onClick={handleAllowLocation}
                 className="w-full py-4 rounded-2xl bg-emerald-500 text-black font-black tracking-wider text-sm hover:bg-emerald-400 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] mb-3"
               >
                 ✅ Allow Location Access
               </button>
-              <button
+              <button type="button"
                 onClick={handleDenyLocation}
                 className="w-full py-3 rounded-2xl border border-slate-700 text-slate-400 text-xs font-medium hover:bg-slate-800 transition-all"
               >

@@ -1,8 +1,103 @@
 import express from 'express';
 import Emergency from '../models/Emergency.js';
 import { authMiddleware, roleMiddleware } from '../middleware/auth.js';
+import Groq from 'groq-sdk';
+import dotenv from 'dotenv';
+import twilio from 'twilio';
+dotenv.config();
+
+let twilioClient = null;
+try {
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  }
+} catch(e) {
+  console.log("Twilio init failed, using mock mode");
+}
 
 const router = express.Router();
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'dummy_key' });
+
+// AI Triage endpoint
+router.post('/triage', async (req, res) => {
+  try {
+    const { symptoms, vitals } = req.body;
+    if (!symptoms && !vitals) return res.status(400).json({ message: 'Symptoms or vitals required' });
+
+    const prompt = `You are an expert AI emergency medical dispatcher. 
+Patient Symptoms: "${symptoms || 'None reported'}"
+Patient Vitals: "${vitals || 'None reported'}"
+Determine the emergency 'severity' (must be exactly one of: 'Code Green', 'Code Yellow', 'Code Red', 'Code Blue').
+Determine the hospital preparation required (e.g., 'Cath Lab', 'Trauma Team', 'Stroke Protocol').
+Provide a list of 'requiredEquipment' (max 3 items). 
+Return ONLY a valid JSON object in this exact format: {"severity": "Code Red", "hospitalPrep": "Cath Lab", "requiredEquipment": ["Defibrillator", "Oxygen"]}`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.2,
+      response_format: { type: 'json_object' }
+    });
+
+    const aiResponse = JSON.parse(completion.choices[0]?.message?.content || '{}');
+    
+    res.json({
+      message: 'AI Triage completed',
+      data: aiResponse,
+    });
+  } catch (error) {
+    console.error('Groq AI Error:', error);
+    res.status(500).json({ message: 'AI Triage failed' });
+  }
+});
+
+// Emergency Alerts endpoint (Twilio SMS / WhatsApp)
+router.post('/alerts', async (req, res) => {
+  try {
+    const { hospital, eta, trackLink, status } = req.body;
+    const targetNumber = process.env.TARGET_PHONE_NUMBER;
+    const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+    
+    const timeNow = new Date().toLocaleTimeString();
+    let messageBody = `🚨 GREEN CORRIDOR ACTIVATED: An ambulance is en route to ${hospital || 'Hospital'}. ETA: ${eta || 'N/A'}. Track live: ${trackLink || 'http://localhost:3000'} [${timeNow}]`;
+    
+    if (status === 'arrived') {
+      messageBody = `✅ AMBULANCE ARRIVED: The ambulance has safely arrived at ${hospital || 'Hospital'} and the patient is being transferred. [${timeNow}]`;
+    }
+
+    if (twilioClient && targetNumber && twilioNumber) {
+       // Send Standard SMS
+       await twilioClient.messages.create({
+         body: messageBody,
+         from: twilioNumber,
+         to: targetNumber
+       });
+       
+       // Send WhatsApp if enabled
+       if (process.env.TWILIO_WHATSAPP_NUMBER) {
+         await twilioClient.messages.create({
+           from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+           to: `whatsapp:${targetNumber}`,
+           contentSid: 'HXb5b62575e6e4ff6129ad7c8efe1f983e',
+           contentVariables: JSON.stringify({
+             "1": status === 'arrived' 
+                  ? `ambulance arrived at ${hospital || 'Hospital'}` 
+                  : `ambulance to ${hospital || 'Hospital'}`,
+             "2": timeNow
+           })
+         });
+       }
+       console.log("✅ Twilio alerts sent successfully to", targetNumber);
+    } else {
+       console.log("📞 [MOCK TWILIO ALERT] Would send SMS to", targetNumber || 'MockNumber', ":", messageBody);
+    }
+    
+    res.json({ message: 'Alerts dispatched successfully' });
+  } catch (error) {
+    console.error('Twilio Error:', error);
+    res.status(500).json({ message: 'Failed to send alerts' });
+  }
+});
 
 // Create emergency request
 router.post('/', authMiddleware, async (req, res) => {
