@@ -956,7 +956,7 @@ function overrideAllSignalsGreen() {
     }
 
     function sendArrivalPayload(payload, btn) {
-      fetch('http://localhost:5000/api/emergencies/alerts', {
+      fetch('/api/emergencies/alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload
@@ -994,7 +994,7 @@ function overrideAllSignalsGreen() {
       const btn = document.getElementById('btnTriage');
       btn.innerHTML = 'Running Triage...';
       
-      fetch('http://localhost:5000/api/emergencies/triage', {
+      fetch('/api/emergencies/triage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1028,7 +1028,7 @@ function overrideAllSignalsGreen() {
       if (destName === '--') destName = "Sagar Dutta Medical College";
       let destCoord = hospitals[destName] || hospitals["Sagar Dutta Medical College"];
       
-      fetch('http://localhost:5000/api/routes/recalculate', {
+      fetch('/api/routes/recalculate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer test'},
         body: JSON.stringify({
@@ -1036,14 +1036,22 @@ function overrideAllSignalsGreen() {
           destination: destCoord,
           bottleneck: typeof currentPos !== 'undefined' ? currentPos : [22.7303, 88.3703]
         })
-      }).then(r=>r.json()).then(data => {
+      }).then(r=>r.json()).then(resp => {
+        const aiData = resp.data || {};
+        const reason = aiData.aiReasoning || "Traffic bottleneck detected. Recalculating optimal alternate route.";
         btn.innerHTML = 'Route Adjusted ✅';
-        document.getElementById('activeStatus').querySelector('.status-desc').innerHTML = `<strong>⚠️ Route Recalculated:</strong> ${data.reason}`;
+        document.getElementById('activeStatus').querySelector('.status-desc').innerHTML = `<strong>⚠️ AI Reroute:</strong> ${reason}`;
         
-        // Render the new route line
-        if(routeLine) lmap.removeLayer(routeLine);
-        const newCoords = data.newRoute.map(c => [c[1], c[0]]);
-        routeLine = L.polyline(newCoords, {color: '#ffaa00', weight: 6, opacity: 0.8, dashArray: '10, 10'}).addTo(lmap);
+        // Fetch alternate route from OSRM
+        const start = typeof currentPos !== 'undefined' ? currentPos : [22.7303, 88.3703];
+        fetch(`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${destCoord[1]},${destCoord[0]}?alternatives=3&overview=full&geometries=geojson`)
+          .then(r=>r.json())
+          .then(osrmData => {
+             if(routeLine) lmap.removeLayer(routeLine);
+             const routeObj = osrmData.routes.length > 1 ? osrmData.routes[1] : osrmData.routes[0];
+             const newCoords = routeObj.geometry.coordinates.map(c => [c[1], c[0]]);
+             routeLine = L.polyline(newCoords, {color: '#ffaa00', weight: 6, opacity: 0.8, dashArray: '10, 10'}).addTo(lmap);
+          });
         
         setTimeout(() => { btn.innerHTML = '⚠️ SIMULATE BOTTLENECK (AI REROUTE)'; }, 3000);
       }).catch(e => {

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // Import the components from the simulation page logic
 // Since we want to keep it in one file for now to ensure a clean build
-import SmartJunctionDashboard from './simulation/page';
+import SmartJunctionDashboard from './simulation/Simulation';
 
 export default function LandingPage3D() {
   const [showSim, setShowSim] = useState(false);

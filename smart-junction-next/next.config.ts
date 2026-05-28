@@ -5,14 +5,11 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development", // Disable in dev to fix reload loops
   register: true,
-  skipWaiting: true,
 });
 
 const nextConfig: NextConfig = {
   /* config options here */
-  experimental: {
-    turbopack: {},
-  },
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
