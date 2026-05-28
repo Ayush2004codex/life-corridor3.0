@@ -379,6 +379,9 @@ function activateCorridor() {
   document.getElementById('corridorStatus').style.color = 'var(--g1)';
   document.getElementById('greenStatus').textContent = '🟢';
   
+  // Trigger 3D Simulation across tabs
+  localStorage.setItem('GLOBAL_TRIGGER_CORRIDOR', Date.now().toString());
+  
   // Update map values
   document.getElementById('mapSpeed').textContent = '65 km/h';
   document.getElementById('mapSignals').textContent = '0/6';
@@ -721,6 +724,12 @@ function overrideAllSignalsGreen() {
           🛏️ Live Beds: <span id="disp-beds">--</span>
         </div>
       </div>
+      <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; margin-top: 16px;">
+        <div style="font-size:11px; color:var(--muted); font-weight:bold; letter-spacing:1px; margin-bottom:4px;">CIVILIAN CONTACT NUMBER</div>
+        <div style="font-size:16px; font-weight:700; color:#00ff66; display:flex; align-items:center; gap:8px;">
+          📞 <span id="disp-civilian-phone">--</span>
+        </div>
+      </div>
     </div>
 
     <div style="display:flex; gap:12px; margin-top: 30px;">
@@ -745,6 +754,7 @@ function overrideAllSignalsGreen() {
         document.getElementById('disp-dest').textContent = req.destination;
         document.getElementById('disp-type').textContent = req.type;
         document.getElementById('disp-sev').textContent = req.severity;
+        document.getElementById('disp-civilian-phone').textContent = req.civilianPhone || 'Not Provided';
         
         // New Dual Flow Fields
         document.getElementById('disp-hosptype').textContent = req.hospitalType || 'Unknown';

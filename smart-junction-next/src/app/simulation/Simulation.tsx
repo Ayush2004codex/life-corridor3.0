@@ -267,8 +267,25 @@ export default function SmartJunctionDashboard({ isBackground = false }: { isBac
         });
       }
     };
+    
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'GLOBAL_TRIGGER_CORRIDOR' && event.newValue) {
+        setEmergency((prev) => {
+          if (!prev) {
+            triggerCorridor();
+          }
+          return prev;
+        });
+      }
+    };
+    
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    window.addEventListener('storage', handleStorage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   return (

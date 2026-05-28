@@ -15,6 +15,7 @@ export default function CivilianBookingPage() {
   const [userLocation, setUserLocation] = useState('Current Location (Agarpara)');
   
   const [booking, setBooking] = useState({
+    civilianPhone: '',
     pickup: 'Current Location (Agarpara)',
     destination: 'Apollo Gleneagles',
     type: 'General Transport',
@@ -86,7 +87,8 @@ export default function CivilianBookingPage() {
 
   const requestCriticalSOS = () => {
     const sosBooking = {
-      pickup: 'Current Location (Agarpara)',
+      civilianPhone: booking.civilianPhone,
+      pickup: userLocation,
       destination: 'Sagar Dutta Medical College',
       type: 'Code Red - Critical Trauma',
       severity: 'Critical',
@@ -109,7 +111,7 @@ export default function CivilianBookingPage() {
       localStorage.setItem('dispatch_accepted', 'false');
       
       // Trigger Dispatch Twilio Alerts
-      fetch('http://localhost:5000/api/emergencies/alerts', {
+      fetch('/api/emergencies/alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +144,7 @@ export default function CivilianBookingPage() {
       localStorage.setItem('dispatch_accepted', 'false');
       
       // Trigger Dispatch Twilio Alerts
-      fetch('http://localhost:5000/api/emergencies/alerts', {
+      fetch('/api/emergencies/alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,6 +193,13 @@ export default function CivilianBookingPage() {
               <div className="text-center mb-4">
                 <h2 className="text-2xl font-black text-white tracking-wide mb-2">Select Emergency Response</h2>
                 <p className="text-slate-400 text-sm max-w-sm mx-auto">Choose an automated SOS dispatch for critical emergencies or manually enter details for general transport.</p>
+              </div>
+
+              <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+                <div className="text-[10px] text-emerald-400 font-bold tracking-widest mb-2 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> YOUR PHONE NUMBER (FOR DRIVER CONTACT)
+                </div>
+                <input type="tel" placeholder="+91 9876543210" value={booking.civilianPhone} onChange={e => setBooking({...booking, civilianPhone: e.target.value})} className="w-full bg-transparent border-b border-slate-600 outline-none text-white text-lg font-mono pb-2 focus:border-emerald-500 transition-colors" />
               </div>
 
               {/* Path A: Critical SOS */}
