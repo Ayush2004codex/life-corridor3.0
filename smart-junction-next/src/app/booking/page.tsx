@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, AlertTriangle, ShieldAlert, HeartPulse, Stethoscope, Activity, CheckCircle2, Siren, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 
 export default function CivilianBookingPage() {
   const router = useRouter();
@@ -100,6 +101,8 @@ export default function CivilianBookingPage() {
     
     setStatus('searching');
     setStep(2);
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.playPingSound) window.playPingSound();
     
     setTimeout(() => {
       setStatus('notified');
@@ -117,7 +120,7 @@ export default function CivilianBookingPage() {
         body: JSON.stringify({
           hospital: sosBooking.destination,
           eta: 'Calculating...',
-          trackLink: 'http://localhost:3000/booking'
+          trackLink: window.location.origin + '/booking'
         })
       }).catch(err => console.error('Alerts failed:', err));
     }, 2000);
@@ -133,6 +136,8 @@ export default function CivilianBookingPage() {
 
     setStatus('searching');
     setStep(2);
+    // @ts-ignore
+    if (typeof window !== 'undefined' && window.playPingSound) window.playPingSound();
     
     setTimeout(() => {
       setStatus('notified');
@@ -150,7 +155,7 @@ export default function CivilianBookingPage() {
         body: JSON.stringify({
           hospital: finalBooking.destination,
           eta: 'Calculating...',
-          trackLink: 'http://localhost:3000/booking'
+          trackLink: window.location.origin + '/booking'
         })
       }).catch(err => console.error('Alerts failed:', err));
     }, 2000);
@@ -158,6 +163,7 @@ export default function CivilianBookingPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 overflow-y-auto font-sans relative flex flex-col">
+      <Script src="/audio-engine.js" strategy="lazyOnload" />
       
       {/* Background Simulation */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none fixed">

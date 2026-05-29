@@ -760,7 +760,7 @@
         
         <!-- 3D Simulation iFrame -->
         <div style="flex: 1; min-width: 300px; position:relative; overflow:hidden; height:450px; border-radius:20px; border:1px solid rgba(255,255,255,.08); background:var(--card);">
-          <iframe src="http://localhost:3000/simulation?widget=true" style="width:100%; height:100%; border:none;"></iframe>
+          <iframe src="/simulation?widget=true" style="width:100%; height:100%; border:none;"></iframe>
         </div>
         
       </div>
@@ -1026,7 +1026,7 @@
           document.getElementById('disp-sev').textContent = req.severity;
           document.getElementById('disp-dest').textContent = req.destination;
           document.getElementById('dispatchOverlay').style.display = 'flex';
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2532/2532-preview.mp3'); audio.play().catch(e => { });
+          if (window.playPingSound) window.playPingSound();
         }
       }
     }, 2000);
@@ -1034,7 +1034,9 @@
     function acceptDispatch() {
       const req = JSON.parse(localStorage.getItem('dispatch_request'));
       if (req) { req.accepted = true; localStorage.setItem('dispatch_request', JSON.stringify(req)); }
-      document.getElementById('dispatchOverlay').style.display = 'none'; activateCorridorMap();
+      document.getElementById('dispatchOverlay').style.display = 'none'; 
+      if (window.playSuccessSound) window.playSuccessSound();
+      activateCorridorMap();
     }
 
     function rejectDispatch() { localStorage.removeItem('dispatch_request'); document.getElementById('dispatchOverlay').style.display = 'none'; }
@@ -1082,7 +1084,7 @@
   <div id="bedModal"
     style="display:none; position:fixed; inset:0; background:rgba(10,15,26,0.9); z-index:9999; backdrop-filter:blur(10px); align-items:center; justify-content:center;">
     <div
-      style="background:var(--card); border:1px solid rgba(255,51,102,0.4); border-radius:16px; width:100%; max-width:600px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255,51,102,0.2);">
+      style="background:rgba(10,15,26,0.65);backdrop-filter:blur(16px) saturate(180%);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px;width:100%; max-width:600px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(255,51,102,0.2);">
 
       <div
         style="background:linear-gradient(90deg, rgba(255,51,102,0.2), transparent); padding:24px; border-bottom:1px solid rgba(255,51,102,0.2); display:flex; align-items:center; gap:16px;">
@@ -1346,8 +1348,8 @@
   </style>
 
   <!-- DISPATCH POPUP UI -->
-  <div class="dispatch-overlay" id="dispatchOverlay">
-    <div class="dispatch-card">
+  <div class="dispatch-overlay premium-glass" id="dispatchOverlay">
+    <div class="dispatch-card animate-slide-up">
       <div
         style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 20px;">
         <div style="font-size: 24px; font-weight: 900; color: #ff3366; display:flex; align-items:center; gap:10px;">
@@ -1398,5 +1400,5 @@
     </div>
   </div>
 </body>
-
+<script src="audio-engine.js"></script>
 </html>
